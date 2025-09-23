@@ -72,9 +72,9 @@ function CreatorTipHistory({ creatorAddress }: { creatorAddress: string }) {
                 <TableRow key={tip.id}>
                   <TableCell>{shortenAddress(tip.sender)}</TableCell>
                   <TableCell className="font-medium">
-                    <div>{tip.amount} ETH</div>
+                    <div>{tip.amount} {tip.token}</div>
                     <div className="text-xs text-muted-foreground">
-                      {ethPrice && `$${getUsdValue(tip.amount)} USD`}
+                      {ethPrice && tip.token === 'ETH' && `$${getUsdValue(tip.amount)} USD`}
                     </div>
                   </TableCell>
                   <TableCell className="max-w-[150px] truncate" title={tip.message}>
@@ -113,7 +113,7 @@ function TopTippers({ creatorAddress }: { creatorAddress: string }) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-center">Top Supporters</h3>
+      <h3 className="text-lg font-semibold text-center">Top Supporters (ETH)</h3>
       {isLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-8 w-full" />

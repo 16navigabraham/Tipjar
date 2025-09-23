@@ -19,16 +19,19 @@ import { useAccount } from 'wagmi';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useState, useEffect } from 'react';
 import { Textarea } from './ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { tokens, Token } from '@/lib/tokens';
 
 const formSchema = z.object({
   amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
     message: 'Please enter a valid positive amount.',
   }),
   message: z.string().optional(),
+  token: z.string(),
 });
 
 interface TipFormProps {
-    onSendTip: (amount: string, message?: string) => Promise<void>;
+    onSendTip: (amount: string, token: Token, message?: string) => Promise<void>;
     isSending: boolean;
     isConfirming: boolean;
 }
@@ -43,10 +46,14 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
     defaultValues: {
       amount: '',
       message: '',
+      token: 'ETH',
     },
   });
 
   const amountValue = form.watch('amount');
+  const selectedTokenSymbol = form.watch('token');
+
+  const selectedToken = tokens.find(t => t.symbol === selectedTokenSymbol) || tokens[0];
 
   useEffect(() => {
     if (ethPrice && amountValue) {
@@ -62,34 +69,65 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
   }, [amountValue, ethPrice]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    await onSendTip(values.amount, values.message);
+    const tokenToSend = tokens.find(t => t.symbol === values.token)!;
+    await onSendTip(values.amount, tokenToSend, values.message);
     form.reset();
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Amount (ETH)</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Input placeholder="0.01" type="number" step="any" {...field} className="pr-20" />
-                  {usdValue && (
-                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">
-                      ~${usdValue} USD
-                    </span>
-                  )}
-                </div>
-              </FormControl>
-              <FormDescription>The amount in ETH you want to tip.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="flex gap-4">
+          <FormField
+            control={form.control}
+            name="amount"
+            render={({ field }) => (
+              <FormItem className="flex-grow">
+                <FormLabel>Amount</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input placeholder="0.01" type="number" step="any" {...field} className="pr-20" />
+                    {usdValue && (
+                      <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">
+                        ~${usdValue} USD
+                      </span>
+                    )}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="token"
+            render={({ field }) => (
+              <FormItem className="w-1/3">
+                <FormLabel>Token</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a token" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {tokens.map(token => (
+                      <SelectItem key={token.symbol} value={token.symbol}>
+                        <div className="flex items-center gap-2">
+                          {token.symbol}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+        <FormDescription>The amount and token you want to tip.</FormDescription>
+
+
         <FormField
           control={form.control}
           name="message"
@@ -107,7 +145,7 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
           {isSending || isConfirming ? 'Sending...' : (
             <>
               <Send className="mr-2 h-4 w-4" />
-              Send Tip
+              Send {form.getValues('amount') || 'Tip'} {selectedToken.symbol}
             </>
           )}
         </Button>

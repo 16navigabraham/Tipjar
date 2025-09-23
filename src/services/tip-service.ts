@@ -89,12 +89,14 @@ export async function getTopTippers(receiver: string, limit: number = 3): Promis
         const tipperStats: { [sender: string]: number } = {};
 
         tips.forEach(tip => {
-            const amount = parseFloat(tip.amount);
-            if (!isNaN(amount)) {
-                if (tipperStats[tip.sender]) {
-                    tipperStats[tip.sender] += amount;
-                } else {
-                    tipperStats[tip.sender] = amount;
+            if (tip.token === 'ETH') { // Only aggregate ETH tips for leaderboard for now
+                const amount = parseFloat(tip.amount);
+                if (!isNaN(amount)) {
+                    if (tipperStats[tip.sender]) {
+                        tipperStats[tip.sender] += amount;
+                    } else {
+                        tipperStats[tip.sender] = amount;
+                    }
                 }
             }
         });
