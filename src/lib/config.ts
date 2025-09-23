@@ -10,7 +10,7 @@ if (!projectId) throw new Error('Project ID is not defined');
 export const creatorAddress = '0xYourCreatorWalletAddressHere'; // TODO: Replace with your actual address
 
 // 2. Your smart contract address
-export const contractAddress = '0xYourContractAddressHere'; // TODO: Replace with your deployed contract address
+export const contractAddress = '0x6a5cD29381dF74ae705d317A3C93e3489a8eaFAb'; // TODO: Replace with your deployed contract address
 export const contractChain = base;
 
 // 3. Create wagmiConfig
