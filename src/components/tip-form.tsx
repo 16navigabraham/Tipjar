@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Send } from 'lucide-react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useSendTransaction } from 'wagmi';
+import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
 import { contractChain, creatorAddress } from '@/lib/config';
 import { useEffect } from 'react';
@@ -101,8 +101,8 @@ export function TipForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" size="lg" disabled={isPending}>
-          {isPending ? 'Sending...' : (
+        <Button type="submit" className="w-full" size="lg" disabled={isPending || isConfirming}>
+          {isPending || isConfirming ? 'Sending...' : (
             <>
               <Send className="mr-2 h-4 w-4" />
               Send Tip
