@@ -1,7 +1,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { addDoc, collection, getDocs, orderBy, query, serverTimestamp, where, Timestamp } from 'firebase/firestore';
+import { addDoc, collection, getDocs, orderBy, query, serverTimestamp, where, Timestamp, limit as firestoreLimit } from 'firebase/firestore';
 
 export interface Tip {
   receiver: string;
@@ -25,6 +25,7 @@ export interface TipDocument extends Omit<Tip, 'timestamp'> {
 export interface TopTipper {
     sender: string;
     totalAmount: number;
+    token: string;
 }
 
 
@@ -86,23 +87,32 @@ export async function getTopTippers(receiver: string, limit: number = 3): Promis
     try {
         const tips = await getTipsByReceiver(receiver);
         
-        const tipperStats: { [sender: string]: number } = {};
+        const tipperStats: { [sender: string]: { [token: string]: number } } = {};
 
         tips.forEach(tip => {
-            if (tip.token === 'ETH') { // Only aggregate ETH tips for leaderboard for now
-                const amount = parseFloat(tip.amount);
-                if (!isNaN(amount)) {
-                    if (tipperStats[tip.sender]) {
-                        tipperStats[tip.sender] += amount;
-                    } else {
-                        tipperStats[tip.sender] = amount;
-                    }
+            const amount = parseFloat(tip.amount);
+            if (!isNaN(amount)) {
+                if (!tipperStats[tip.sender]) {
+                    tipperStats[tip.sender] = {};
+                }
+                if (tipperStats[tip.sender][tip.token]) {
+                    tipperStats[tip.sender][tip.token] += amount;
+                } else {
+                    tipperStats[tip.sender][tip.token] = amount;
                 }
             }
         });
+        
+        const allTippers: TopTipper[] = [];
+        Object.entries(tipperStats).forEach(([sender, tokenAmounts]) => {
+            Object.entries(tokenAmounts).forEach(([token, totalAmount]) => {
+                if(token === 'ETH') { // only show ETH for now
+                     allTippers.push({ sender, totalAmount, token });
+                }
+            });
+        });
 
-        const sortedTippers = Object.entries(tipperStats)
-            .map(([sender, totalAmount]) => ({ sender, totalAmount }))
+        const sortedTippers = allTippers
             .sort((a, b) => b.totalAmount - a.totalAmount);
             
         return sortedTippers.slice(0, limit);

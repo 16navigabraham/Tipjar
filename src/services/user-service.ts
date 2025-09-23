@@ -6,6 +6,7 @@ import { collection, query, where, getDocs, limit, doc, setDoc, getDoc } from 'f
 export interface User {
     username: string;
     walletAddress: `0x${string}`;
+    pfpUrl: string;
 }
 
 export interface UserDocument extends User {
@@ -17,6 +18,7 @@ const hardcodedCreator = {
     id: '1',
     username: 'creator',
     walletAddress: '0x3525a342340576D4229415494848316239B27f12' as `0x${string}`,
+    pfpUrl: '',
 };
 
 export async function isUsernameAvailable(username: string): Promise<boolean> {
@@ -101,5 +103,20 @@ export async function createUser(user: User) {
     } catch(e) {
         console.error('Error creating user:', e);
         return { success: false, error: 'An unexpected error occurred.' };
+    }
+}
+
+export async function getAllUsers(): Promise<UserDocument[]> {
+    try {
+        const usersCollection = collection(db, 'users');
+        const querySnapshot = await getDocs(usersCollection);
+        const users = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...(doc.data() as User),
+        }));
+        return users;
+    } catch (error) {
+        console.error('Error fetching all users:', error);
+        return [];
     }
 }
