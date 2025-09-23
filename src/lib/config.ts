@@ -1,5 +1,5 @@
 import { defaultWagmiConfig } from '@web3modal/wagmi/react/config';
-import { base } from 'wagmi/chains';
+import { base, mainnet } from 'wagmi/chains';
 
 // 0. Your WalletConnect Cloud project ID
 export const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
@@ -21,7 +21,7 @@ const metadata = {
   icons: ['https://avatars.githubusercontent.com/u/37784886'],
 };
 
-const chains = [base] as const;
+const chains = [base, mainnet] as const;
 export const wagmiConfig = defaultWagmiConfig({
   chains,
   projectId,
