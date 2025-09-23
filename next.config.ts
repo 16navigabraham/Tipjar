@@ -39,6 +39,7 @@ const nextConfig: NextConfig = {
   },
   env: {
     NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
+    NEXT_PUBLIC_ALCHEMY_BASE_URL: process.env.NEXT_PUBLIC_ALCHEMY_BASE_URL,
   },
 };
 

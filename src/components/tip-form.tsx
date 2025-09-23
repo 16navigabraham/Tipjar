@@ -14,13 +14,16 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Send } from 'lucide-react';
+import { Send, Wallet } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useState, useEffect } from 'react';
 import { Textarea } from './ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { tokens, Token } from '@/lib/tokens';
+import { getTokenBalance } from '@/services/alchemy-service';
+import { useQuery } from '@tanstack/react-query';
+import { formatUnits } from 'viem';
 
 const formSchema = z.object({
   amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -37,7 +40,7 @@ interface TipFormProps {
 }
 
 export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
-  const { isConnected } = useAccount();
+  const { address, isConnected } = useAccount();
   const { price: ethPrice } = useEthPrice();
   const [usdValue, setUsdValue] = useState<string>('');
 
@@ -55,8 +58,24 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
 
   const selectedToken = tokens.find(t => t.symbol === selectedTokenSymbol) || tokens[0];
 
+  const { data: balance, isLoading: isLoadingBalance } = useQuery({
+    queryKey: ['balance', address, selectedToken.symbol],
+    queryFn: async () => {
+      if (!address) return null;
+      if (selectedToken.symbol === 'ETH') {
+        // Handling native ETH balance would require a different method,
+        // wagmi's `useBalance` hook is suitable for that.
+        // For now, we focus on ERC20 tokens via Alchemy.
+        return null;
+      }
+      const rawBalance = await getTokenBalance(address, selectedToken.address!);
+      return parseFloat(formatUnits(BigInt(rawBalance), selectedToken.decimals)).toFixed(4);
+    },
+    enabled: !!address && !!selectedToken.address,
+  });
+
   useEffect(() => {
-    if (ethPrice && amountValue) {
+    if (ethPrice && amountValue && selectedToken.symbol === 'ETH') {
       const numericAmount = parseFloat(amountValue);
       if (!isNaN(numericAmount)) {
         setUsdValue((numericAmount * ethPrice).toFixed(2));
@@ -66,7 +85,7 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
     } else {
       setUsdValue('');
     }
-  }, [amountValue, ethPrice]);
+  }, [amountValue, ethPrice, selectedToken]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const tokenToSend = tokens.find(t => t.symbol === values.token)!;
@@ -87,7 +106,7 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
                 <FormControl>
                   <div className="relative">
                     <Input placeholder="0.01" type="number" step="any" {...field} className="pr-20" />
-                    {usdValue && (
+                    {usdValue && selectedToken.symbol === 'ETH' && (
                       <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">
                         ~${usdValue} USD
                       </span>
@@ -125,8 +144,13 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
             )}
           />
         </div>
-        <FormDescription>The amount and token you want to tip.</FormDescription>
-
+        
+        {isConnected && selectedToken.address && (
+          <div className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <Wallet className="w-3 h-3" />
+            Balance: {isLoadingBalance ? 'Loading...' : `${balance || '0.0000'} ${selectedToken.symbol}`}
+          </div>
+        )}
 
         <FormField
           control={form.control}
