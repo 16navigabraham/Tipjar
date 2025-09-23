@@ -3,19 +3,14 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from './ui/separator';
 import { useAccount } from 'wagmi';
-import { useQuery } from '@tanstack/react-query';
-import { getTipsBySender, TipDocument } from '@/services/tip-service';
 import { Skeleton } from './ui/skeleton';
 import { format } from 'date-fns';
+import { useTip } from '@/hooks/use-tip';
+import { TipDocument } from '@/services/tip-service';
 
 export function TipHistory() {
   const { address, isConnected } = useAccount();
-
-  const { data: tips, isLoading } = useQuery({
-    queryKey: ['tips', address],
-    queryFn: () => getTipsBySender(address!),
-    enabled: !!address && isConnected,
-  });
+  const { tipHistory, isLoadingHistory } = useTip();
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
@@ -38,7 +33,7 @@ export function TipHistory() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {isLoadingHistory ? (
               <TableRow>
                 <TableCell colSpan={3}>
                   <div className="space-y-2">
@@ -47,8 +42,8 @@ export function TipHistory() {
                   </div>
                 </TableCell>
               </TableRow>
-            ) : tips && tips.length > 0 ? (
-              tips.map((tip: TipDocument) => (
+            ) : tipHistory && tipHistory.length > 0 ? (
+              tipHistory.map((tip: TipDocument) => (
                 <TableRow key={tip.id}>
                   <TableCell className="font-medium">{tip.amount}</TableCell>
                   <TableCell>{tip.token}</TableCell>

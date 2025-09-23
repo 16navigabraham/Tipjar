@@ -14,14 +14,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 import { Send } from 'lucide-react';
-import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
-import { parseEther } from 'viem';
-import { creatorAddress } from '@/lib/config';
-import { useEffect } from 'react';
-import { logTip } from '@/services/tip-service';
-import { useQueryClient } from '@tanstack/react-query';
+import { useAccount } from 'wagmi';
+import { useTip } from '@/hooks/use-tip';
 
 const formSchema = z.object({
   amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -30,10 +25,8 @@ const formSchema = z.object({
 });
 
 export function TipForm() {
-  const { toast } = useToast();
-  const { address, chain, isConnected } = useAccount();
-  const { data: hash, error, isPending, sendTransaction } = useSendTransaction();
-  const queryClient = useQueryClient();
+  const { isConnected } = useAccount();
+  const { sendTip, isSending, isConfirming } = useTip();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -43,52 +36,9 @@ export function TipForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    sendTransaction({
-      to: creatorAddress as `0x${string}`,
-      value: parseEther(values.amount),
-    });
+    await sendTip(values.amount);
+    form.reset();
   }
-
-  const { isLoading: isConfirming, isSuccess: isConfirmed } =
-    useWaitForTransactionReceipt({
-      hash,
-    });
-
-  useEffect(() => {
-    if (isConfirming) {
-      toast({
-        title: 'Transaction Submitted',
-        description: 'Sending tip... Please wait for confirmation.',
-      });
-    }
-    if (isConfirmed && hash) {
-      toast({
-        title: '🎉 Tip Sent!',
-        description: 'Successfully sent tip. Thank you for your support!',
-      });
-      if (address) {
-        logTip({
-          amount: form.getValues('amount'),
-          token: 'ETH',
-          sender: address,
-          txHash: hash,
-          timestamp: new Date(),
-        }).catch(console.error)
-        .finally(() => {
-          queryClient.invalidateQueries({ queryKey: ['tips', address] });
-        });
-      }
-      form.reset();
-    }
-    if (error) {
-      toast({
-        title: 'Error',
-        description: error.shortMessage || 'An unexpected error occurred.',
-        variant: 'destructive',
-      });
-    }
-  }, [isConfirming, isConfirmed, error, toast, form, hash, address, queryClient]);
-
 
   return (
     <Form {...form}>
@@ -107,8 +57,8 @@ export function TipForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" size="lg" disabled={!isConnected || isPending || isConfirming}>
-          {isPending || isConfirming ? 'Sending...' : (
+        <Button type="submit" className="w-full" size="lg" disabled={!isConnected || isSending || isConfirming}>
+          {isSending || isConfirming ? 'Sending...' : (
             <>
               <Send className="mr-2 h-4 w-4" />
               Send Tip
