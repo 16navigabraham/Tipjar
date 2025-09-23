@@ -20,6 +20,7 @@ import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wa
 import { parseEther } from 'viem';
 import { contractChain, creatorAddress } from '@/lib/config';
 import { useEffect } from 'react';
+import { logTip } from '@/services/tip-service';
 
 const formSchema = z.object({
   amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -29,7 +30,7 @@ const formSchema = z.object({
 
 export function TipForm() {
   const { toast } = useToast();
-  const { chain } = useAccount();
+  const { address, chain } = useAccount();
   const { data: hash, error, isPending, sendTransaction } = useSendTransaction();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -64,14 +65,23 @@ export function TipForm() {
     if (isConfirming) {
       toast({
         title: 'Transaction Submitted',
-        description: `Sending tip... Please wait for confirmation.`,
+        description: 'Sending tip... Please wait for confirmation.',
       });
     }
-    if (isConfirmed) {
+    if (isConfirmed && hash) {
       toast({
         title: '🎉 Tip Sent!',
-        description: `Successfully sent tip. Thank you for your support!`,
+        description: 'Successfully sent tip. Thank you for your support!',
       });
+      if (address) {
+        logTip({
+          amount: form.getValues('amount'),
+          token: 'ETH',
+          sender: address,
+          txHash: hash,
+          timestamp: new Date(),
+        }).catch(console.error);
+      }
       form.reset();
     }
     if (error) {
@@ -81,7 +91,7 @@ export function TipForm() {
         variant: 'destructive',
       });
     }
-  }, [isConfirming, isConfirmed, error, toast, form]);
+  }, [isConfirming, isConfirmed, error, toast, form, hash, address]);
 
 
   return (
