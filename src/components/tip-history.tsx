@@ -8,7 +8,6 @@ import { format } from 'date-fns';
 import { useTip } from '@/hooks/use-tip';
 import { TipDocument } from '@/services/tip-service';
 import { useEthPrice } from '@/hooks/use-eth-price';
-import { parseEther } from 'viem';
 
 export function TipHistory() {
   const { isConnected } = useAccount();
@@ -25,7 +24,6 @@ export function TipHistory() {
   const getUsdValue = (ethAmount: string) => {
     if (!ethPrice || !ethAmount) return null;
     try {
-      // The amount is stored in smallest unit (wei), convert it to ETH
       const amountInEth = parseFloat(ethAmount);
       return (amountInEth * ethPrice).toFixed(2);
     } catch (e) {
@@ -65,7 +63,7 @@ export function TipHistory() {
                       {ethPrice && `$${getUsdValue(tip.amount)} USD`}
                     </div>
                   </TableCell>
-                  <TableCell className="max-w-[150px] truncate">{tip.message || '-'}</TableCell>
+                  <TableCell className="max-w-[150px] truncate" title={tip.message}>{tip.message || '-'}</TableCell>
                   <TableCell className="text-right">{formatDate(tip.timestamp)}</TableCell>
                 </TableRow>
               ))
