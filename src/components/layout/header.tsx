@@ -1,4 +1,5 @@
 import { ConnectWalletButton } from '@/components/connect-wallet-button';
+import { ThemeToggle } from '../theme-toggle';
 
 export function Header() {
   return (
@@ -11,8 +12,9 @@ export function Header() {
             </span>
           </a>
         </div>
-        <div className="flex flex-1 items-center justify-end">
+        <div className="flex flex-1 items-center justify-end gap-2">
           <ConnectWalletButton />
+          <ThemeToggle />
         </div>
       </div>
     </header>
