@@ -6,7 +6,7 @@ import { TipForm } from './tip-form';
 import { UserDocument } from '@/services/user-service';
 import { useTip } from '@/hooks/use-tip';
 import { useQuery } from '@tanstack/react-query';
-import { getTipsByReceiver, getTopTippers, TopTipper } from '@/services/tip-service';
+import { getTipsByReceiver, getTopTippers } from '@/services/tip-service';
 import { shortenAddress } from '@/lib/utils';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
