@@ -2,7 +2,7 @@
 
 import { useToast } from '@/hooks/use-toast';
 import { useAccount, useSendTransaction, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
-import { parseEther } from 'viem';
+import { parseEther, parseUnits } from 'viem';
 import { useEffect, useState } from 'react';
 import { getTipsBySender, logTip } from '@/services/tip-service';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -45,7 +45,7 @@ export function useTip(creatorAddress: `0x${string}`) {
                 abi: erc20Abi,
                 address: token.address as `0x${string}`,
                 functionName: 'transfer',
-                args: [creatorAddress, parseEther(amount)],
+                args: [creatorAddress, parseUnits(amount, token.decimals)],
             });
             // We don't get the hash immediately like with sendTransaction, so we can't rely on the outer hash state.
             // For now, let's just show a submitted toast and log it optimistically.
