@@ -6,23 +6,14 @@ import { collection, query, where, getDocs, limit, doc, setDoc, getDoc } from 'f
 export interface User {
     username: string;
     walletAddress: `0x${string}`;
-    pfpUrl: string;
+    pfpUrl?: string;
 }
 
 export interface UserDocument extends User {
     id: string;
 }
 
-// Hardcoded creator for demo purposes - will be removed later
-const hardcodedCreator = {
-    id: '1',
-    username: 'creator',
-    walletAddress: '0x3525a342340576D4229415494848316239B27f12' as `0x${string}`,
-    pfpUrl: '',
-};
-
 export async function isUsernameAvailable(username: string): Promise<boolean> {
-    if (username.toLowerCase() === 'creator') return false;
     try {
         const userRef = doc(db, 'users', username.toLowerCase());
         const docSnap = await getDoc(userRef);
@@ -35,10 +26,6 @@ export async function isUsernameAvailable(username: string): Promise<boolean> {
 
 export async function getUserByUsername(username: string): Promise<UserDocument | null> {
     try {
-        if (username.toLowerCase() === 'creator') {
-            return hardcodedCreator;
-        }
-
         const userRef = doc(db, 'users', username.toLowerCase());
         const docSnap = await getDoc(userRef);
 
@@ -58,10 +45,6 @@ export async function getUserByUsername(username: string): Promise<UserDocument 
 
 export async function getUserByWalletAddress(walletAddress: `0x${string}`): Promise<UserDocument | null> {
     try {
-        if (walletAddress === hardcodedCreator.walletAddress) {
-            return hardcodedCreator;
-        }
-
         const usersCollection = collection(db, 'users');
         const q = query(
             usersCollection,
@@ -114,6 +97,16 @@ export async function getAllUsers(): Promise<UserDocument[]> {
             id: doc.id,
             ...(doc.data() as User),
         }));
+        // Manually add the hardcoded creator to the list if not already present
+        const creatorExists = users.some(u => u.walletAddress.toLowerCase() === '0x3525a342340576D4229415494848316239B27f12'.toLowerCase());
+        if (!creatorExists) {
+             users.push({
+                id: 'creator',
+                username: 'creator',
+                walletAddress: '0x3525a342340576D4229415494848316239B27f12',
+                pfpUrl: '',
+            });
+        }
         return users;
     } catch (error) {
         console.error('Error fetching all users:', error);

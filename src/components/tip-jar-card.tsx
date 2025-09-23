@@ -2,88 +2,58 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccount } from 'wagmi';
-import { TipForm } from './tip-form';
-import { TipHistory } from './tip-history';
-import { useTip } from '@/hooks/use-tip';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useState } from 'react';
-import { isAddress } from 'viem';
-import { useEnsAddress } from 'wagmi';
-import { mainnet } from 'viem/chains';
+import { Button } from './ui/button';
+import { useRouter } from 'next/navigation';
+import { Loader2, Search } from 'lucide-react';
+import Link from 'next/link';
 
 export function TipJarCard() {
   const { isConnected } = useAccount();
   const [recipient, setRecipient] = useState('');
-  const [debouncedRecipient, setDebouncedRecipient] = useState('');
-  const [finalRecipientAddress, setFinalRecipientAddress] = useState<`0x${string}` | undefined>();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const isENS = debouncedRecipient.includes('.');
-  const isDirectAddress = isAddress(debouncedRecipient);
-
-  const { data: ensAddress, isLoading: ensLoading } = useEnsAddress({
-    name: debouncedRecipient,
-    chainId: mainnet.id,
-    query: {
-      enabled: isENS,
-    },
-  });
-
-  useState(() => {
-    const handler = setTimeout(() => {
-      setDebouncedRecipient(recipient);
-    }, 500);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [recipient]);
-
-  useState(() => {
-    if (isENS) {
-      setFinalRecipientAddress(ensAddress ?? undefined);
-    } else if (isDirectAddress) {
-      setFinalRecipientAddress(debouncedRecipient as `0x${string}`);
-    } else {
-      setFinalRecipientAddress(undefined);
-    }
-  }, [debouncedRecipient, ensAddress, isENS, isDirectAddress]);
-  
-  const { sendTip, isSending, isConfirming } = useTip(finalRecipientAddress);
-  
-  const isValidRecipient = finalRecipientAddress && isAddress(finalRecipientAddress);
+  const handleSearch = () => {
+      if (recipient) {
+        setIsLoading(true);
+        router.push(`/tip/${recipient}`);
+      }
+  }
 
   return (
     <Card className="w-full max-w-md shadow-lg">
       <CardHeader className="text-center">
         <CardTitle className="text-3xl font-bold font-headline">Send a Tip</CardTitle>
-        <CardDescription>Show your appreciation for a creator.</CardDescription>
+        <CardDescription>Know a creator's username, ENS, or wallet address? Look them up here.</CardDescription>
       </CardHeader>
       <CardContent className="p-6 space-y-6">
-        <div className="space-y-2">
-            <Label htmlFor="recipient">Recipient's Wallet Address or ENS</Label>
+        <div className="flex gap-2">
             <Input 
                 id="recipient"
-                placeholder="0x... or vitalik.eth"
+                placeholder="username, vitalik.eth, or 0x..."
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
             />
-            {recipient && !isValidRecipient && !ensLoading && <p className="text-xs text-destructive">Please enter a valid address or ENS name.</p>}
-            {ensLoading && <p className="text-xs text-muted-foreground">Resolving ENS name...</p>}
+            <Button onClick={handleSearch} disabled={!recipient || isLoading}>
+                {isLoading ? <Loader2 className="animate-spin"/> : <Search />}
+            </Button>
         </div>
 
-        {isConnected ? (
-          <div className="space-y-8">
-            <div className={!isValidRecipient ? 'opacity-50 pointer-events-none' : ''}>
-                <TipForm onSendTip={sendTip} isSending={isSending} isConfirming={isConfirming} />
-            </div>
-            <TipHistory />
-          </div>
-        ) : (
-          <p className="text-center text-muted-foreground pt-8">
-            Please connect your wallet to send a tip and view your history.
-          </p>
+        {!isConnected && (
+            <p className="text-center text-muted-foreground pt-8">
+                Please connect your wallet to send a tip.
+            </p>
         )}
+        <p className="text-center text-sm text-muted-foreground">
+            Don't know any creators?{' '}
+            <Link href="/leaderboard" className="text-primary hover:underline">
+             Check out the leaderboard!
+            </Link>
+        </p>
       </CardContent>
     </Card>
   );

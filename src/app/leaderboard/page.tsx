@@ -11,7 +11,7 @@ async function Leaderboard() {
     // For a real app, you'd want to aggregate top tippers across all creators.
     // We are fetching all users and then getting top tippers for each.
     const users = await getAllUsers();
-    const allTopTippers: { sender: string, totalAmount: number, receiver: string }[] = [];
+    const allTopTippers: { sender: string, totalAmount: number, receiver: string, token: string }[] = [];
 
     for (const user of users) {
         const tippers = await getTopTippers(user.walletAddress, 10);

@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Send, Coins } from 'lucide-react';
+import { Send, Coins, Bot } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useState, useEffect } from 'react';
@@ -24,6 +24,7 @@ import { tokens, Token } from '@/lib/tokens';
 import { useQuery } from '@tanstack/react-query';
 import { getTokenBalance } from '@/services/alchemy-service';
 import { formatUnits } from 'viem';
+import { suggestTipTokens, SuggestTipTokensOutput } from '@/ai/flows/suggest-tip-tokens';
 
 const formSchema = z.object({
   amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -43,6 +44,8 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
   const { address, isConnected } = useAccount();
   const { price: ethPrice } = useEthPrice();
   const [usdValue, setUsdValue] = useState<string>('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<SuggestTipTokensOutput | null>(null);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -55,6 +58,7 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
 
   const amountValue = form.watch('amount');
   const selectedTokenSymbol = form.watch('tokenSymbol');
+  const messageValue = form.watch('message');
   const selectedToken = tokens.find(t => t.symbol === selectedTokenSymbol) || tokens[0];
 
   const { data: tokenBalance, isLoading: isLoadingBalance } = useQuery({
@@ -66,7 +70,20 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
   const formattedBalance = tokenBalance 
     ? parseFloat(formatUnits(BigInt(tokenBalance), selectedToken.decimals)).toFixed(4)
     : '0';
-
+  
+  const handleAiSuggest = async () => {
+    if (!messageValue) return;
+    setIsAiLoading(true);
+    setAiSuggestions(null);
+    try {
+      const suggestions = await suggestTipTokens({ tokenDescription: messageValue });
+      setAiSuggestions(suggestions);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (selectedToken.symbol === 'ETH' && ethPrice && amountValue) {
@@ -152,10 +169,15 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
           name="message"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Message (Optional)</FormLabel>
+              <div className="flex justify-between items-center">
+                <FormLabel>Message (Optional)</FormLabel>
+                <Button variant="ghost" size="sm" type="button" onClick={handleAiSuggest} disabled={!messageValue || isAiLoading}>
+                  <Bot className="mr-2" /> {isAiLoading ? 'Thinking...' : 'Suggest Token'}
+                </Button>
+              </div>
               <FormControl>
                 <Textarea
-                  placeholder="Say something nice..."
+                  placeholder="Say something nice... or describe a token you want to find (e.g. 'a meme coin')"
                   className="resize-none"
                   {...field}
                 />
@@ -164,6 +186,32 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
             </FormItem>
           )}
         />
+        {aiSuggestions && aiSuggestions.suggestedTokens.length > 0 && (
+          <div className="p-3 bg-secondary rounded-md">
+            <h4 className="font-semibold text-sm mb-2">AI Suggestions:</h4>
+            <div className="flex flex-wrap gap-2">
+              {aiSuggestions.suggestedTokens.map((token) => {
+                const tokenExists = tokens.some(t => t.symbol.toLowerCase() === token.toLowerCase());
+                return (
+                  <Button
+                    key={token}
+                    type="button"
+                    variant={tokenExists ? "secondary" : "outline"}
+                    size="sm"
+                    onClick={() => tokenExists && form.setValue('tokenSymbol', token.toUpperCase())}
+                    disabled={!tokenExists}
+                    title={!tokenExists ? `Token ${token} not supported` : `Select ${token}`}
+                  >
+                    {token.toUpperCase()}
+                  </Button>
+                )
+              })}
+            </div>
+            {!aiSuggestions.suggestedTokens.some(t => tokens.some(ts => ts.symbol.toLowerCase() === t.toLowerCase())) && (
+                <p className="text-xs text-muted-foreground mt-2">None of the suggested tokens are supported for tipping yet.</p>
+            )}
+          </div>
+        )}
         
         <Button type="submit" className="w-full" size="lg" disabled={!isConnected || isLoading}>
           {isLoading ? 'Sending...' : (

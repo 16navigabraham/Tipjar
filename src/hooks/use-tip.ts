@@ -170,5 +170,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
     sendTip,
     isSending: isLoading,
     isConfirming: isConfirming,
+    tipHistory: [],
+    isLoadingHistory: false,
   };
 }

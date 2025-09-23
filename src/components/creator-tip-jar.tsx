@@ -14,6 +14,7 @@ import { Skeleton } from './ui/skeleton';
 import { format } from 'date-fns';
 import { Separator } from './ui/separator';
 import { Crown } from 'lucide-react';
+import Image from 'next/image';
 
 interface CreatorTipJarProps {
   creator: UserDocument;
@@ -30,7 +31,7 @@ function CreatorTipHistory({ creatorAddress }: { creatorAddress: string }) {
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
-    const date = timestamp.toDate ? timestamp.toDate() : timestamp;
+    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
     return format(date, 'yyyy-MM-dd');
   };
 
@@ -147,6 +148,13 @@ export function CreatorTipJar({ creator }: CreatorTipJarProps) {
   return (
     <Card className="w-full max-w-md shadow-lg">
       <CardHeader className="text-center">
+        <Image 
+            src={creator.pfpUrl || `https://picsum.photos/seed/${creator.walletAddress}/100`}
+            alt={creator.username}
+            width={100}
+            height={100}
+            className="rounded-full mx-auto mb-4 border-4 border-primary"
+        />
         <CardTitle className="text-3xl font-bold font-headline">Send a Tip to {creator.username}</CardTitle>
         <CardDescription>Show your appreciation for {creator.username}.</CardDescription>
       </CardHeader>
