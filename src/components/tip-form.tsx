@@ -16,7 +16,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Send } from 'lucide-react';
 import { useAccount } from 'wagmi';
-import { useTip } from '@/hooks/use-tip';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useState, useEffect } from 'react';
 import { Textarea } from './ui/textarea';
@@ -28,9 +27,14 @@ const formSchema = z.object({
   message: z.string().optional(),
 });
 
-export function TipForm() {
+interface TipFormProps {
+    onSendTip: (amount: string, message?: string) => Promise<void>;
+    isSending: boolean;
+    isConfirming: boolean;
+}
+
+export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
   const { isConnected } = useAccount();
-  const { sendTip, isSending, isConfirming } = useTip();
   const { price: ethPrice } = useEthPrice();
   const [usdValue, setUsdValue] = useState<string>('');
 
@@ -58,7 +62,7 @@ export function TipForm() {
   }, [amountValue, ethPrice]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    await sendTip(values.amount, values.message);
+    await onSendTip(values.amount, values.message);
     form.reset();
   }
 

@@ -4,9 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAccount } from 'wagmi';
 import { TipForm } from './tip-form';
 import { TipHistory } from './tip-history';
+import { useTip } from '@/hooks/use-tip';
+import { creatorAddress } from '@/lib/config';
 
 export function TipJarCard() {
   const { isConnected } = useAccount();
+  const { sendTip, isSending, isConfirming } = useTip(creatorAddress);
 
   return (
     <Card className="w-full max-w-md shadow-lg">
@@ -17,7 +20,7 @@ export function TipJarCard() {
       <CardContent className="p-6">
         {isConnected ? (
           <div className="space-y-8">
-            <TipForm />
+            <TipForm onSendTip={sendTip} isSending={isSending} isConfirming={isConfirming} />
             <TipHistory />
           </div>
         ) : (

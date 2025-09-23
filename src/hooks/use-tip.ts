@@ -3,12 +3,11 @@
 import { useToast } from '@/hooks/use-toast';
 import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
-import { creatorAddress } from '@/lib/config';
 import { useEffect, useState } from 'react';
 import { getTipsBySender, logTip } from '@/services/tip-service';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
-export function useTip() {
+export function useTip(creatorAddress: `0x${string}`) {
   const { toast } = useToast();
   const { address, isConnected } = useAccount();
   const queryClient = useQueryClient();
@@ -32,7 +31,7 @@ export function useTip() {
     }
     setTipData({ amount, message });
     sendTransaction({
-      to: creatorAddress as `0x${string}`,
+      to: creatorAddress,
       value: parseEther(amount),
     });
   };
@@ -51,6 +50,7 @@ export function useTip() {
       });
       
       logTip({
+        receiver: creatorAddress,
         amount: tipData.amount,
         message: tipData.message,
         token: 'ETH',
@@ -59,6 +59,7 @@ export function useTip() {
         timestamp: new Date(),
       }).finally(() => {
         queryClient.invalidateQueries({ queryKey: ['tips', address] });
+        queryClient.invalidateQueries({ queryKey: ['creator-tips', creatorAddress] });
         setTipData(null);
       });
     }
@@ -70,7 +71,7 @@ export function useTip() {
       });
       setTipData(null);
     }
-  }, [isConfirming, isConfirmed, error, toast, hash, address, queryClient, tipData]);
+  }, [isConfirming, isConfirmed, error, toast, hash, address, queryClient, tipData, creatorAddress]);
 
   return {
     sendTip,

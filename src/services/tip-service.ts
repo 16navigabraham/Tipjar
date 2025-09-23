@@ -4,6 +4,7 @@ import { db } from '@/lib/firebase';
 import { addDoc, collection, getDocs, orderBy, query, serverTimestamp, where, Timestamp } from 'firebase/firestore';
 
 export interface Tip {
+  receiver: string;
   amount: string;
   token: string;
   sender: string;
@@ -52,6 +53,26 @@ export async function getTipsBySender(sender: string): Promise<TipDocument[]> {
     return tips;
   } catch (error) {
     console.error('Error fetching tips:', error);
+    return [];
+  }
+}
+
+export async function getTipsByReceiver(receiver: string): Promise<TipDocument[]> {
+  try {
+    const tipsCollection = collection(db, 'tips');
+    const q = query(
+      tipsCollection,
+      where('receiver', '==', receiver),
+      orderBy('timestamp', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    const tips = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...(doc.data() as Omit<TipDocument, 'id'>),
+    }));
+    return tips;
+  } catch (error) {
+    console.error('Error fetching tips for creator:', error);
     return [];
   }
 }
