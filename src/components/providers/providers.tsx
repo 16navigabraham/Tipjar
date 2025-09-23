@@ -1,7 +1,7 @@
 'use client';
 
 import { createWeb3Modal } from '@web3modal/wagmi/react';
-import { type ReactNode } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { wagmiConfig, projectId } from '@/lib/config';
@@ -34,6 +34,21 @@ function Web3ModalProvider({ children }: { children: ReactNode }) {
   );
 }
 
+function ClientSideProviders({ children }: { children: ReactNode }) {
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    // You can return a loader here if you want
+    return null;
+  }
+
+  return <Web3ModalProvider>{children}</Web3ModalProvider>;
+}
+
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <NextThemesProvider
@@ -42,7 +57,7 @@ export function Providers({ children }: { children: ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
-      <Web3ModalProvider>{children}</Web3ModalProvider>
+      <ClientSideProviders>{children}</ClientSideProviders>
     </NextThemesProvider>
   );
 }
