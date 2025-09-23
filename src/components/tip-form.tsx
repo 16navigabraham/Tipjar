@@ -16,6 +16,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Coins, Send } from 'lucide-react';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { parseEther } from 'viem';
+import { contractAddress, contractChain } from '@/lib/config';
+import { tipJarAbi } from '@/lib/abi/TipJar';
+import { useEffect } from 'react';
 
 const formSchema = z.object({
   amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -26,6 +31,8 @@ const formSchema = z.object({
 
 export function TipForm() {
   const { toast } = useToast();
+  const { chain } = useAccount();
+  const { data: hash, error, isPending, writeContract } = useWriteContract();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -35,22 +42,52 @@ export function TipForm() {
     },
   });
 
-  // Placeholder for transaction logic
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log('Submitting tip:', values);
-    toast({
-      title: 'Transaction Submitted',
-      description: `Sending ${values.amount} ${values.token}. Please wait for confirmation.`,
+    if (chain?.id !== contractChain.id) {
+      toast({
+        title: 'Wrong Network',
+        description: `Please switch to the ${contractChain.name} network to send a tip.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    writeContract({
+      address: contractAddress as `0x${string}`,
+      abi: tipJarAbi,
+      functionName: 'tip',
+      value: parseEther(values.amount),
     });
-    // Here you would call a wagmi hook to send the transaction
-    // For now, we'll just simulate a success
-    setTimeout(() => {
-        toast({
-            title: "🎉 Tip Sent!",
-            description: `Successfully sent ${values.amount} ${values.token}.`,
-        });
-    }, 3000);
   }
+
+  const { isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({
+      hash,
+    });
+
+  useEffect(() => {
+    if (isConfirming) {
+      toast({
+        title: 'Transaction Submitted',
+        description: `Sending tip... Please wait for confirmation.`,
+      });
+    }
+    if (isConfirmed) {
+      toast({
+        title: '🎉 Tip Sent!',
+        description: `Successfully sent tip. Thank you for your support!`,
+      });
+      form.reset();
+    }
+    if (error) {
+      toast({
+        title: 'Error',
+        description: error.shortMessage || 'An unexpected error occurred.',
+        variant: 'destructive',
+      });
+    }
+  }, [isConfirming, isConfirmed, error, toast, form]);
+
 
   return (
     <Form {...form}>
@@ -64,7 +101,7 @@ export function TipForm() {
               <FormControl>
                 <Input placeholder="0.01" type="number" step="any" {...field} />
               </FormControl>
-              <FormDescription>The amount you want to tip.</FormDescription>
+              <FormDescription>The amount you want to tip in ETH.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -78,19 +115,23 @@ export function TipForm() {
               <FormControl>
                 <div className="relative">
                   <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input placeholder="ETH, USDC, etc." {...field} className="pl-10" />
+                  <Input {...field} className="pl-10" disabled readOnly />
                 </div>
               </FormControl>
               <FormDescription>
-                Tipping in ETH is currently supported. More tokens coming soon!
+                Tipping in ETH on the {contractChain.name} network is supported.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" size="lg">
-          <Send className="mr-2 h-4 w-4" />
-          Send Tip
+        <Button type="submit" className="w-full" size="lg" disabled={isPending}>
+          {isPending ? 'Sending...' : (
+            <>
+              <Send className="mr-2 h-4 w-4" />
+              Send Tip
+            </>
+          )}
         </Button>
       </form>
     </Form>

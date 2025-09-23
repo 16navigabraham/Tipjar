@@ -9,7 +9,11 @@ if (!projectId) throw new Error('Project ID is not defined');
 // 1. Your creator wallet address
 export const creatorAddress = '0xYourCreatorWalletAddressHere'; // TODO: Replace with your actual address
 
-// 2. Create wagmiConfig
+// 2. Your smart contract address
+export const contractAddress = '0xYourContractAddressHere'; // TODO: Replace with your deployed contract address
+export const contractChain = base;
+
+// 3. Create wagmiConfig
 const metadata = {
   name: 'TipJar',
   description: 'A simple dApp to send tips to creators.',
