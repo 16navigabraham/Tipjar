@@ -1,5 +1,1 @@
-# Firebase Studio
-
-This is a NextJS starter in Firebase Studio.
-
-To get started, take a look at src/app/page.tsx.
+TipJar is a simple dApp that allows users to easily send ETH tips to creators by connecting their wallet. Built on WalletConnect and Ethereum, users can input a tip amount, send it securely on-chain, and optionally log the tip history using Firebase. It's a lightweight and gas-efficient way to support creators directly with crypto.
