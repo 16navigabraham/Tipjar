@@ -40,7 +40,6 @@ export function TipHistory() {
           <TableHeader>
             <TableRow>
               <TableHead>Amount</TableHead>
-              <TableHead>Message</TableHead>
               <TableHead className="text-right">Date</TableHead>
             </TableRow>
           </TableHeader>
@@ -63,7 +62,6 @@ export function TipHistory() {
                       {ethPrice && `$${getUsdValue(tip.amount)} USD`}
                     </div>
                   </TableCell>
-                  <TableCell className="max-w-[150px] truncate" title={tip.message}>{tip.message || '-'}</TableCell>
                   <TableCell className="text-right">{formatDate(tip.timestamp)}</TableCell>
                 </TableRow>
               ))

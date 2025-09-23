@@ -7,17 +7,17 @@ import { useEffect, useState } from 'react';
 import { getTipsBySender, logTip } from '@/services/tip-service';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Token } from '@/lib/tokens';
-import { erc20Abi } from '@/lib/abi/erc20';
+import { tipJarAbi } from '@/lib/abi/TipJar';
+import { contractAddress, contractChain } from '@/lib/config';
 
-export function useTip(creatorAddress: `0x${string}`) {
+export function useTip(creatorAddress?: `0x${string}`) {
   const { toast } = useToast();
   const { address, isConnected } = useAccount();
   const queryClient = useQueryClient();
-  const { writeContractAsync } = useWriteContract();
+  
+  const { data: hash, error, isPending: isSending, writeContract } = useWriteContract();
 
-  const { data: hash, error, isPending: isSending, sendTransaction } = useSendTransaction();
   const [tipData, setTipData] = useState<{ amount: string, token: Token, message?: string } | null>(null);
-
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
@@ -32,40 +32,21 @@ export function useTip(creatorAddress: `0x${string}`) {
       toast({ title: 'Error', description: 'Please connect your wallet first.', variant: 'destructive' });
       return;
     }
+    if (!creatorAddress) {
+      toast({ title: 'Error', description: 'Creator address not found.', variant: 'destructive' });
+      return;
+    }
+
     setTipData({ amount, token, message });
 
     try {
-        if (token.symbol === 'ETH') {
-            sendTransaction({
-              to: creatorAddress,
-              value: parseEther(amount),
-            });
-        } else {
-            const txHash = await writeContractAsync({
-                abi: erc20Abi,
-                address: token.address as `0x${string}`,
-                functionName: 'transfer',
-                args: [creatorAddress, parseUnits(amount, token.decimals)],
-            });
-            // We don't get the hash immediately like with sendTransaction, so we can't rely on the outer hash state.
-            // For now, let's just show a submitted toast and log it optimistically.
-             toast({
-                title: 'Transaction Submitted',
-                description: `Sending ${amount} ${token.symbol}...`,
-            });
-            await logTip({
-                receiver: creatorAddress,
-                amount: amount,
-                message: message,
-                token: token.symbol,
-                sender: address!,
-                txHash: txHash,
-                timestamp: new Date(),
-              });
-            queryClient.invalidateQueries({ queryKey: ['tips', address] });
-            queryClient.invalidateQueries({ queryKey: ['creator-tips', creatorAddress] });
-            setTipData(null);
-        }
+        writeContract({
+            address: contractAddress,
+            abi: tipJarAbi,
+            functionName: 'tip',
+            value: parseEther(amount),
+            chainId: contractChain.id
+        });
     } catch(e: any) {
         toast({
             title: 'Error',
@@ -83,7 +64,7 @@ export function useTip(creatorAddress: `0x${string}`) {
         description: 'Sending tip... Please wait for confirmation.',
       });
     }
-    if (isConfirmed && hash && address && tipData && tipData.token.symbol === 'ETH') {
+    if (isConfirmed && hash && address && tipData && creatorAddress) {
       toast({
         title: '🎉 Tip Sent!',
         description: 'Successfully sent tip. Thank you for your support!',
