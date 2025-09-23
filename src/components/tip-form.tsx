@@ -17,6 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Send } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useTip } from '@/hooks/use-tip';
+import { useEthPrice } from '@/hooks/use-eth-price';
+import { useState, useEffect } from 'react';
 
 const formSchema = z.object({
   amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -27,6 +29,8 @@ const formSchema = z.object({
 export function TipForm() {
   const { isConnected } = useAccount();
   const { sendTip, isSending, isConfirming } = useTip();
+  const { price: ethPrice } = useEthPrice();
+  const [usdValue, setUsdValue] = useState<string>('');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -34,6 +38,21 @@ export function TipForm() {
       amount: '',
     },
   });
+
+  const amountValue = form.watch('amount');
+
+  useEffect(() => {
+    if (ethPrice && amountValue) {
+      const numericAmount = parseFloat(amountValue);
+      if (!isNaN(numericAmount)) {
+        setUsdValue((numericAmount * ethPrice).toFixed(2));
+      } else {
+        setUsdValue('');
+      }
+    } else {
+      setUsdValue('');
+    }
+  }, [amountValue, ethPrice]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     await sendTip(values.amount);
@@ -50,7 +69,14 @@ export function TipForm() {
             <FormItem>
               <FormLabel>Amount (ETH)</FormLabel>
               <FormControl>
-                <Input placeholder="0.01" type="number" step="any" {...field} />
+                <div className="relative">
+                  <Input placeholder="0.01" type="number" step="any" {...field} className="pr-20" />
+                  {usdValue && (
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">
+                      ~${usdValue} USD
+                    </span>
+                  )}
+                </div>
               </FormControl>
               <FormDescription>The amount in ETH you want to tip.</FormDescription>
               <FormMessage />

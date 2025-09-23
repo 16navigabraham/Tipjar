@@ -7,16 +7,30 @@ import { Skeleton } from './ui/skeleton';
 import { format } from 'date-fns';
 import { useTip } from '@/hooks/use-tip';
 import { TipDocument } from '@/services/tip-service';
+import { useEthPrice } from '@/hooks/use-eth-price';
+import { parseEther } from 'viem';
 
 export function TipHistory() {
-  const { address, isConnected } = useAccount();
+  const { isConnected } = useAccount();
   const { tipHistory, isLoadingHistory } = useTip();
+  const { price: ethPrice } = useEthPrice();
 
   const formatDate = (timestamp: any) => {
     if (!timestamp) return 'N/A';
     // Firestore Timestamps have toMillis(), but we might get a Date object
     const date = timestamp.toDate ? timestamp.toDate() : timestamp;
     return format(date, 'yyyy-MM-dd');
+  };
+
+  const getUsdValue = (ethAmount: string) => {
+    if (!ethPrice || !ethAmount) return null;
+    try {
+      // The amount is stored in smallest unit (wei), convert it to ETH
+      const amountInEth = parseFloat(ethAmount);
+      return (amountInEth * ethPrice).toFixed(2);
+    } catch (e) {
+      return null;
+    }
   };
 
   return (
@@ -45,7 +59,12 @@ export function TipHistory() {
             ) : tipHistory && tipHistory.length > 0 ? (
               tipHistory.map((tip: TipDocument) => (
                 <TableRow key={tip.id}>
-                  <TableCell className="font-medium">{tip.amount}</TableCell>
+                  <TableCell className="font-medium">
+                    <div>{tip.amount}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {ethPrice && `$${getUsdValue(tip.amount)} USD`}
+                    </div>
+                  </TableCell>
                   <TableCell>{tip.token}</TableCell>
                   <TableCell className="text-right">{formatDate(tip.timestamp)}</TableCell>
                 </TableRow>
