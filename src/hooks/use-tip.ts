@@ -2,7 +2,7 @@
 
 import { useToast } from '@/hooks/use-toast';
 import { useAccount, useWaitForTransactionReceipt, useWriteContract, useReadContract } from 'wagmi';
-import { parseEther, parseUnits } from 'viem';
+import { parseUnits } from 'viem';
 import { useEffect, useState } from 'react';
 import { getTipsBySender, logTip } from '@/services/tip-service';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
