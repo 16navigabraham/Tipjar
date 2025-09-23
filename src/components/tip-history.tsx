@@ -42,7 +42,7 @@ export function TipHistory() {
           <TableHeader>
             <TableRow>
               <TableHead>Amount</TableHead>
-              <TableHead>Token</TableHead>
+              <TableHead>Message</TableHead>
               <TableHead className="text-right">Date</TableHead>
             </TableRow>
           </TableHeader>
@@ -60,12 +60,12 @@ export function TipHistory() {
               tipHistory.map((tip: TipDocument) => (
                 <TableRow key={tip.id}>
                   <TableCell className="font-medium">
-                    <div>{tip.amount}</div>
+                    <div>{tip.amount} ETH</div>
                     <div className="text-xs text-muted-foreground">
                       {ethPrice && `$${getUsdValue(tip.amount)} USD`}
                     </div>
                   </TableCell>
-                  <TableCell>{tip.token}</TableCell>
+                  <TableCell className="max-w-[150px] truncate">{tip.message || '-'}</TableCell>
                   <TableCell className="text-right">{formatDate(tip.timestamp)}</TableCell>
                 </TableRow>
               ))

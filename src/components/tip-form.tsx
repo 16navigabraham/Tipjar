@@ -19,11 +19,13 @@ import { useAccount } from 'wagmi';
 import { useTip } from '@/hooks/use-tip';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useState, useEffect } from 'react';
+import { Textarea } from './ui/textarea';
 
 const formSchema = z.object({
   amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
     message: 'Please enter a valid positive amount.',
   }),
+  message: z.string().optional(),
 });
 
 export function TipForm() {
@@ -36,6 +38,7 @@ export function TipForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       amount: '',
+      message: '',
     },
   });
 
@@ -55,7 +58,7 @@ export function TipForm() {
   }, [amountValue, ethPrice]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    await sendTip(values.amount);
+    await sendTip(values.amount, values.message);
     form.reset();
   }
 
@@ -79,6 +82,19 @@ export function TipForm() {
                 </div>
               </FormControl>
               <FormDescription>The amount in ETH you want to tip.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="message"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Message (Optional)</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Thanks for the great content!" {...field} />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

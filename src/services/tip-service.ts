@@ -9,6 +9,7 @@ export interface Tip {
   sender: string;
   txHash: string;
   timestamp: Date | Timestamp;
+  message?: string;
 }
 
 export interface TipLog extends Omit<Tip, 'timestamp'> {
