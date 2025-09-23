@@ -20,7 +20,7 @@ export default function CreatorTipPage() {
 
   const isEnsName = usernameOrAddress.includes('.');
 
-  const { data: ensAddress, isLoading: isLoadingEns } = useEnsName({
+  const { data: ensAddress, isLoading: isLoadingEns } = useEnsAddress({
     name: usernameOrAddress,
     chainId: mainnet.id,
     enabled: isEnsName,
