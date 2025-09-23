@@ -22,6 +22,11 @@ export interface TipDocument extends Omit<Tip, 'timestamp'> {
   timestamp: Timestamp;
 }
 
+export interface TopTipper {
+    sender: string;
+    totalAmount: number;
+}
+
 
 export async function logTip(tip: TipLog) {
   try {
@@ -75,4 +80,33 @@ export async function getTipsByReceiver(receiver: string): Promise<TipDocument[]
     console.error('Error fetching tips for creator:', error);
     return [];
   }
+}
+
+export async function getTopTippers(receiver: string, limit: number = 3): Promise<TopTipper[]> {
+    try {
+        const tips = await getTipsByReceiver(receiver);
+        
+        const tipperStats: { [sender: string]: number } = {};
+
+        tips.forEach(tip => {
+            const amount = parseFloat(tip.amount);
+            if (!isNaN(amount)) {
+                if (tipperStats[tip.sender]) {
+                    tipperStats[tip.sender] += amount;
+                } else {
+                    tipperStats[tip.sender] = amount;
+                }
+            }
+        });
+
+        const sortedTippers = Object.entries(tipperStats)
+            .map(([sender, totalAmount]) => ({ sender, totalAmount }))
+            .sort((a, b) => b.totalAmount - a.totalAmount);
+            
+        return sortedTippers.slice(0, limit);
+
+    } catch (error) {
+        console.error('Error calculating top tippers:', error);
+        return [];
+    }
 }

@@ -6,13 +6,14 @@ import { TipForm } from './tip-form';
 import { UserDocument } from '@/services/user-service';
 import { useTip } from '@/hooks/use-tip';
 import { useQuery } from '@tanstack/react-query';
-import { getTipsByReceiver } from '@/services/tip-service';
+import { getTipsByReceiver, getTopTippers, TopTipper } from '@/services/tip-service';
 import { shortenAddress } from '@/lib/utils';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Skeleton } from './ui/skeleton';
 import { format } from 'date-fns';
 import { Separator } from './ui/separator';
+import { Crown } from 'lucide-react';
 
 interface CreatorTipJarProps {
   creator: UserDocument;
@@ -96,6 +97,48 @@ function CreatorTipHistory({ creatorAddress }: { creatorAddress: string }) {
   );
 }
 
+function TopTippers({ creatorAddress }: { creatorAddress: string }) {
+  const { data: topTippers, isLoading } = useQuery({
+    queryKey: ['top-tippers', creatorAddress],
+    queryFn: () => getTopTippers(creatorAddress),
+    enabled: !!creatorAddress,
+  });
+
+  const getTrophyColor = (index: number) => {
+    if (index === 0) return 'text-yellow-400';
+    if (index === 1) return 'text-gray-400';
+    if (index === 2) return 'text-yellow-600';
+    return 'text-muted-foreground';
+  };
+
+  return (
+    <div className="space-y-4">
+      <h3 className="text-lg font-semibold text-center">Top Supporters</h3>
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+          <Skeleton className="h-8 w-full" />
+        </div>
+      ) : topTippers && topTippers.length > 0 ? (
+        <ul className="space-y-2">
+          {topTippers.map((tipper, index) => (
+            <li key={tipper.sender} className="flex items-center justify-between p-2 rounded-md bg-secondary/50">
+              <div className="flex items-center gap-3">
+                <Crown className={`w-5 h-5 ${getTrophyColor(index)}`} />
+                <span className="font-medium">{shortenAddress(tipper.sender)}</span>
+              </div>
+              <span className="font-semibold">{tipper.totalAmount.toFixed(4)} ETH</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-center text-muted-foreground text-sm">No supporters yet. Be the first!</p>
+      )}
+    </div>
+  );
+}
+
 
 export function CreatorTipJar({ creator }: CreatorTipJarProps) {
   const { isConnected } = useAccount();
@@ -116,6 +159,8 @@ export function CreatorTipJar({ creator }: CreatorTipJarProps) {
                 Please connect your wallet to send a tip.
               </p>
             )}
+            <Separator />
+            <TopTippers creatorAddress={creator.walletAddress} />
             <Separator />
             <CreatorTipHistory creatorAddress={creator.walletAddress} />
           </div>
