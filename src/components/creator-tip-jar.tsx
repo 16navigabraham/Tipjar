@@ -3,7 +3,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccount } from 'wagmi';
 import { TipForm } from './tip-form';
-import { TipHistory } from './tip-history';
 import { UserDocument } from '@/services/user-service';
 import { useTip } from '@/hooks/use-tip';
 import { useQuery } from '@tanstack/react-query';
@@ -13,6 +12,7 @@ import { useEthPrice } from '@/hooks/use-eth-price';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Skeleton } from './ui/skeleton';
 import { format } from 'date-fns';
+import { Separator } from './ui/separator';
 
 interface CreatorTipJarProps {
   creator: UserDocument;
@@ -108,17 +108,17 @@ export function CreatorTipJar({ creator }: CreatorTipJarProps) {
         <CardDescription>Show your appreciation for {creator.username}.</CardDescription>
       </CardHeader>
       <CardContent className="p-6">
-        {isConnected ? (
           <div className="space-y-8">
-            <TipForm onSendTip={sendTip} isSending={isSending} isConfirming={isConfirming} />
+            {isConnected ? (
+              <TipForm onSendTip={sendTip} isSending={isSending} isConfirming={isConfirming} />
+            ) : (
+              <p className="text-center text-muted-foreground pt-8">
+                Please connect your wallet to send a tip.
+              </p>
+            )}
+            <Separator />
             <CreatorTipHistory creatorAddress={creator.walletAddress} />
-            <TipHistory />
           </div>
-        ) : (
-          <p className="text-center text-muted-foreground pt-8">
-            Please connect your wallet to send a tip and view history.
-          </p>
-        )}
       </CardContent>
     </Card>
   );
