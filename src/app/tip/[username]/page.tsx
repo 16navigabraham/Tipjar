@@ -20,7 +20,7 @@ export default function CreatorTipPage() {
 
   const isEnsName = usernameOrAddress.includes('.');
 
-  const { data: ensAddress, isLoading: isLoadingEns } = useEnsAddress({
+  const { data: ensAddress, isLoading: isLoadingEns } = useEnsName({
     name: usernameOrAddress,
     chainId: mainnet.id,
     enabled: isEnsName,
@@ -56,7 +56,7 @@ export default function CreatorTipPage() {
   const user: UserDocument | null | undefined = userByAddress ?? userByUsername;
   const finalWalletAddress = creatorWalletAddress || user?.walletAddress;
 
-  const effectiveUser: UserDocument | undefined = user || (finalWalletAddress ? {
+  const effectiveUser: UserDocument | undefined = user ? { ...user, username: user.username || usernameOrAddress } : (finalWalletAddress ? {
       id: finalWalletAddress,
       username: usernameOrAddress,
       walletAddress: finalWalletAddress
