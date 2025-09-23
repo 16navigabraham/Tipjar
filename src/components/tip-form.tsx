@@ -18,9 +18,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Send } from 'lucide-react';
 import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
-import { contractChain, creatorAddress } from '@/lib/config';
+import { creatorAddress } from '@/lib/config';
 import { useEffect } from 'react';
 import { logTip } from '@/services/tip-service';
+import { useQueryClient } from '@tanstack/react-query';
 
 const formSchema = z.object({
   amount: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
@@ -30,8 +31,9 @@ const formSchema = z.object({
 
 export function TipForm() {
   const { toast } = useToast();
-  const { address, chain } = useAccount();
+  const { address, chain, isConnected } = useAccount();
   const { data: hash, error, isPending, sendTransaction } = useSendTransaction();
+  const queryClient = useQueryClient();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,15 +43,6 @@ export function TipForm() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (chain?.id !== contractChain.id) {
-      toast({
-        title: 'Wrong Network',
-        description: `Please switch to the ${contractChain.name} network to send a tip.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-
     sendTransaction({
       to: creatorAddress as `0x${string}`,
       value: parseEther(values.amount),
@@ -80,7 +73,10 @@ export function TipForm() {
           sender: address,
           txHash: hash,
           timestamp: new Date(),
-        }).catch(console.error);
+        }).catch(console.error)
+        .finally(() => {
+          queryClient.invalidateQueries({ queryKey: ['tips', address] });
+        });
       }
       form.reset();
     }
@@ -91,7 +87,7 @@ export function TipForm() {
         variant: 'destructive',
       });
     }
-  }, [isConfirming, isConfirmed, error, toast, form, hash, address]);
+  }, [isConfirming, isConfirmed, error, toast, form, hash, address, queryClient]);
 
 
   return (
@@ -111,7 +107,7 @@ export function TipForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full" size="lg" disabled={isPending || isConfirming}>
+        <Button type="submit" className="w-full" size="lg" disabled={!isConnected || isPending || isConfirming}>
           {isPending || isConfirming ? 'Sending...' : (
             <>
               <Send className="mr-2 h-4 w-4" />
