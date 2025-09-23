@@ -7,10 +7,10 @@ export const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 if (!projectId) throw new Error('Project ID is not defined');
 
 // 1. Your creator wallet address
-export const creatorAddress = '0xYourCreatorWalletAddressHere'; // TODO: Replace with your actual address
+export const creatorAddress = '0x3525a342340576D4229415494848316239B27f12'; // TODO: Replace with your actual address
 
 // 2. Your smart contract address
-export const contractAddress = '0x6a5cD29381dF74ae705d317A3C93e3489a8eaFAb'; // TODO: Replace with your deployed contract address
+export const contractAddress = '0x6a5cD29381dF74ae705d317A3C93e3489a8eaFAb';
 export const contractChain = base;
 
 // 3. Create wagmiConfig
