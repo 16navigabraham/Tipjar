@@ -18,8 +18,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Coins, Send } from 'lucide-react';
 import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseEther } from 'viem';
-import { contractAddress, contractChain } from '@/lib/config';
+import { contractAddress, contractChain, creatorAddress } from '@/lib/config';
 import { tipJarAbi } from '@/lib/abi/TipJar';
+import { erc20Abi } from '@/lib/abi/erc20';
 import { useEffect } from 'react';
 
 const formSchema = z.object({
@@ -27,11 +28,12 @@ const formSchema = z.object({
     message: 'Please enter a valid positive amount.',
   }),
   token: z.string().default('ETH'),
+  tokenAddress: z.string().optional(),
 });
 
 export function TipForm() {
   const { toast } = useToast();
-  const { chain } = useAccount();
+  const { address, chain } = useAccount();
   const { data: hash, error, isPending, writeContract } = useWriteContract();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -52,12 +54,29 @@ export function TipForm() {
       return;
     }
 
-    writeContract({
-      address: contractAddress as `0x${string}`,
-      abi: tipJarAbi,
-      functionName: 'tip',
-      value: parseEther(values.amount),
-    });
+    if (values.token === 'ETH') {
+      writeContract({
+        address: contractAddress as `0x${string}`,
+        abi: tipJarAbi,
+        functionName: 'tip',
+        value: parseEther(values.amount),
+      });
+    } else {
+      if (!values.tokenAddress || !address) {
+        toast({
+          title: 'Token Address Required',
+          description: 'Please provide a token address for ERC20 tips.',
+          variant: 'destructive',
+        });
+        return;
+      }
+      writeContract({
+        address: values.tokenAddress as `0x${string}`,
+        abi: erc20Abi,
+        functionName: 'transferFrom',
+        args: [address, creatorAddress as `0x${string}`, parseEther(values.amount)],
+      });
+    }
   }
 
   const { isLoading: isConfirming, isSuccess: isConfirmed } =
@@ -101,7 +120,7 @@ export function TipForm() {
               <FormControl>
                 <Input placeholder="0.01" type="number" step="any" {...field} />
               </FormControl>
-              <FormDescription>The amount you want to tip in ETH.</FormDescription>
+              <FormDescription>The amount you want to tip.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -115,16 +134,34 @@ export function TipForm() {
               <FormControl>
                 <div className="relative">
                   <Coins className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input {...field} className="pl-10" disabled readOnly />
+                  <Input {...field} className="pl-10" />
                 </div>
               </FormControl>
               <FormDescription>
-                Tipping in ETH on the {contractChain.name} network is supported.
+                Enter a token symbol (e.g., "USDC") or "ETH".
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
+        {form.watch('token') !== 'ETH' && (
+          <FormField
+            control={form.control}
+            name="tokenAddress"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Token Contract Address</FormLabel>
+                <FormControl>
+                  <Input placeholder="0x..." {...field} />
+                </FormControl>
+                <FormDescription>
+                  The address of the ERC20 token contract.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
         <Button type="submit" className="w-full" size="lg" disabled={isPending}>
           {isPending ? 'Sending...' : (
             <>
