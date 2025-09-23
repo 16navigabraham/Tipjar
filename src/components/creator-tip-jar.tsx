@@ -144,6 +144,8 @@ function TopTippers({ creatorAddress }: { creatorAddress: string }) {
 export function CreatorTipJar({ creator }: CreatorTipJarProps) {
   const { isConnected } = useAccount();
   const { sendTip, isSending, isConfirming } = useTip(creator.walletAddress);
+  
+  const displayName = creator.username.startsWith('0x') ? shortenAddress(creator.username) : creator.username;
 
   return (
     <Card className="w-full max-w-md shadow-lg">
@@ -155,8 +157,8 @@ export function CreatorTipJar({ creator }: CreatorTipJarProps) {
             height={100}
             className="rounded-full mx-auto mb-4 border-4 border-primary"
         />
-        <CardTitle className="text-3xl font-bold font-headline">Send a Tip to {creator.username}</CardTitle>
-        <CardDescription>Show your appreciation for {creator.username}.</CardDescription>
+        <CardTitle className="text-2xl font-bold font-headline">Send a Tip to {displayName}</CardTitle>
+        <CardDescription>Show your appreciation for {displayName}.</CardDescription>
       </CardHeader>
       <CardContent className="p-6">
           <div className="space-y-8">
