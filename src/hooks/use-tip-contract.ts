@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useMemo } from 'react';
-import { useAccount, useClient } from 'wagmi';
 import { BrowserProvider, JsonRpcSigner, ethers, type ContractTransactionResponse } from 'ethers';
+import { useAccount, useClient } from 'wagmi';
 import { type HttpTransport } from 'viem';
 import { tipJarAbi } from '@/lib/abi/TipJar';
 import { erc20Abi } from '@/lib/abi/erc20';
@@ -26,6 +27,21 @@ export function useEthersAdapters() {
     return { provider, signer };
 }
 
+// Helper function to safely validate and checksum addresses
+function validateAddress(address: string): string {
+    try {
+      return ethers.getAddress(address);
+    } catch (error) {
+        console.warn(`Invalid address checksum: ${address}, attempting to correct.`);
+        try {
+            // If that fails, try with lowercase (some addresses need this)
+            return ethers.getAddress(address.toLowerCase());
+        } catch (secondError) {
+            throw new Error(`Invalid address format: ${address}`);
+        }
+    }
+  }
+
 // Main hook to be used in components
 export function useTipContract() {
   const { signer } = useEthersAdapters();
@@ -38,7 +54,7 @@ export function useTipContract() {
   const tipWithNative = async (recipientAddress: string, tipAmountEth: string): Promise<ContractTransactionResponse> => {
     if (!contract || !signer) throw new Error('Contract or signer not initialized');
     
-    const validRecipientAddress = ethers.getAddress(recipientAddress);
+    const validRecipientAddress = validateAddress(recipientAddress);
     const tipAmountWei = ethers.parseEther(tipAmountEth);
     
     const tx = await contract.tipWithNative(validRecipientAddress, {
@@ -47,14 +63,13 @@ export function useTipContract() {
     return tx;
   };
 
-  const tipWithERC20Human = async (tokenAddress: string, recipientAddress: string, humanAmount: string): Promise<ContractTransactionResponse> => {
+  const tipWithERC20Human = async (tokenAddress: string, recipientAddress: string, humanAmount: string, decimals: number): Promise<ContractTransactionResponse> => {
     if (!contract || !signer) throw new Error('Contract or signer not initialized');
     
-    const validTokenAddress = ethers.getAddress(tokenAddress);
-    const validRecipientAddress = ethers.getAddress(recipientAddress);
+    const validTokenAddress = validateAddress(tokenAddress);
+    const validRecipientAddress = validateAddress(recipientAddress);
     
     const tokenContract = new ethers.Contract(validTokenAddress, erc20Abi, signer);
-    const decimals = await tokenContract.decimals();
     const tipAmount = ethers.parseUnits(humanAmount, decimals);
 
     const signerAddress = await signer.getAddress();
@@ -62,7 +77,7 @@ export function useTipContract() {
 
     if (currentAllowance < tipAmount) {
         const approveTx = await tokenContract.approve(TIP_CONTRACT_ADDRESS, tipAmount);
-        await approveTx.wait(); 
+        await approveTx.wait(); // Wait for approval to be confirmed
     }
 
     const tx = await contract.tipWithERC20(validTokenAddress, validRecipientAddress, tipAmount);

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useToast } from '@/hooks/use-toast';
@@ -7,6 +8,7 @@ import { getTipsBySender, logTip } from '@/services/tip-service';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Token } from '@/lib/tokens';
 import { useTipContract } from './use-tip-contract';
+import { ethers } from 'ethers';
 
 export function useTip(creatorAddress?: `0x${string}`) {
   const { toast } = useToast();
@@ -33,25 +35,21 @@ export function useTip(creatorAddress?: `0x${string}`) {
     }
 
     setIsSending(true);
-    
 
     try {
       let tx;
+      toast({
+        title: 'Preparing Transaction...',
+        description: 'Please check your wallet.',
+      });
+
       if (token.symbol === 'ETH') {
-        toast({
-          title: 'Sending Tip...',
-          description: 'Please check your wallet to approve the transaction.',
-        });
         tx = await tipWithNative(creatorAddress, amount);
       } else {
-        if (!token.address) {
-          throw new Error('Token address is not defined for ERC20 tip.');
+        if (!token.address || !token.decimals) {
+          throw new Error('Token details are not defined for ERC20 tip.');
         }
-        toast({
-          title: 'Approving Token...',
-          description: 'Please check your wallet to approve token spending.',
-        });
-        tx = await tipWithERC20Human(token.address, creatorAddress, amount);
+        tx = await tipWithERC20Human(token.address, creatorAddress, amount, token.decimals);
       }
 
       toast({
@@ -59,7 +57,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
         description: 'Waiting for confirmation...',
       });
 
-      const receipt = await tx.wait();
+      await tx.wait();
       
       toast({
         title: '🎉 Tip Sent!',
@@ -78,9 +76,11 @@ export function useTip(creatorAddress?: `0x${string}`) {
 
     } catch (e: any) {
       console.error("Tipping failed:", e);
+      // ethers errors often have a `reason` property
+      const errorMessage = e.reason || (e.info?.error?.message) || e.message || 'The transaction was cancelled or failed.';
       toast({
         title: 'Transaction Error',
-        description: e.reason || e.message || 'The transaction was cancelled or failed.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -90,6 +90,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
       queryClient.invalidateQueries({ queryKey: ['top-tippers', creatorAddress] });
       queryClient.invalidateQueries({ queryKey: ['userProfile', address] });
       queryClient.invalidateQueries({ queryKey: ['userProfile', creatorAddress] });
+      queryClient.invalidateQueries({ queryKey: ['globalTopTippers'] });
     }
   };
 
