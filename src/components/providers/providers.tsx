@@ -6,6 +6,7 @@ import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { wagmiConfig, projectId } from '@/lib/config';
 import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes';
+import { AppProvider } from '@/hooks/use-app-provider';
 
 const queryClient = new QueryClient();
 
@@ -20,7 +21,9 @@ function Web3ModalProvider({ children }: { children: ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        {children}
+        <AppProvider>
+            {children}
+        </AppProvider>
         {/* Hack to update web3modal theme */}
         <div
           style={{

@@ -1,7 +1,7 @@
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { getTopTippers } from '@/services/tip-service';
-import { getAllUsers } from '@/services/user-service';
+import { getAllUsers, getUserProfile } from '@/services/user-service';
 import { shortenAddress } from '@/lib/utils';
 import { Crown } from 'lucide-react';
 import Image from 'next/image';
@@ -39,11 +39,11 @@ async function Leaderboard() {
     
     const userProfiles = await Promise.all(
       sortedGlobalTippers.map(async (tipper) => {
-        const user = await getAllUsers().then(users => users.find(u => u.walletAddress.toLowerCase() === tipper.sender.toLowerCase()));
+        const user = await getUserProfile(tipper.sender);
         return {
           ...tipper,
           username: user?.username,
-          pfpUrl: user?.pfpUrl,
+          avatar: user?.avatar,
         };
       })
     );
@@ -67,7 +67,7 @@ async function Leaderboard() {
                         <Crown className={`w-6 h-6 ${getTrophyColor(index)}`} />
                         <span className="text-lg font-bold">#{index + 1}</span>
                          <Image 
-                            src={tipper.pfpUrl || `https://picsum.photos/seed/${tipper.sender}/40`}
+                            src={tipper.avatar || `https://picsum.photos/seed/${tipper.sender}/40`}
                             alt={tipper.username || 'user profile picture'}
                             width={40}
                             height={40}

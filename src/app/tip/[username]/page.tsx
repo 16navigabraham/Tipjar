@@ -2,7 +2,7 @@
 
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { getUserByUsername, getUserByWalletAddress } from '@/services/user-service';
+import { UserDocument, getUserByUsername, getUserProfile } from '@/services/user-service';
 import { Header } from '@/components/layout/header';
 import { CreatorTipJar } from '@/components/creator-tip-jar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,7 +11,6 @@ import { XCircle } from 'lucide-react';
 import { useEnsAddress } from 'wagmi';
 import { mainnet } from 'viem/chains';
 import { useEffect, useState } from 'react';
-import { UserDocument } from '@/services/user-service';
 
 export default function CreatorTipPage() {
   const params = useParams();
@@ -47,7 +46,7 @@ export default function CreatorTipPage() {
 
   const { data: userByAddress, isLoading: isLoadingUserByAddress } = useQuery({
     queryKey: ['creatorByAddress', creatorWalletAddress],
-    queryFn: () => getUserByWalletAddress(creatorWalletAddress!),
+    queryFn: () => getUserProfile(creatorWalletAddress!),
     enabled: !!creatorWalletAddress,
   });
 
@@ -56,10 +55,17 @@ export default function CreatorTipPage() {
   const user: UserDocument | null | undefined = userByAddress ?? userByUsername;
   const finalWalletAddress = creatorWalletAddress || user?.walletAddress;
 
-  const effectiveUser: UserDocument | undefined = user ? { ...user, username: user.username || usernameOrAddress } : (finalWalletAddress ? {
+  const effectiveUser: UserDocument | undefined = user ? { ...user } : (finalWalletAddress ? {
       id: finalWalletAddress,
       username: usernameOrAddress,
-      walletAddress: finalWalletAddress
+      walletAddress: finalWalletAddress,
+      displayName: '',
+      bio: '',
+      avatar: '',
+      createdAt: new Date(),
+      totalTipsReceived: 0,
+      totalTipsSent: 0,
+      isVerified: false,
   } : undefined);
 
   return (

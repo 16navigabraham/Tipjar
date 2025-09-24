@@ -4,18 +4,12 @@ import { useAccount } from 'wagmi';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConnectWalletButton } from './connect-wallet-button';
 import { ProfileForm } from './profile-form';
-import { useQuery } from '@tanstack/react-query';
-import { getUserByWalletAddress } from '@/services/user-service';
 import { Skeleton } from './ui/skeleton';
 import { CheckCircle } from 'lucide-react';
+import { useApp } from '@/hooks/use-app';
 
 export function UserProfile() {
-  const { address, isConnected } = useAccount();
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['userProfile', address],
-    queryFn: () => getUserByWalletAddress(address!),
-    enabled: !!address,
-  });
+  const { isConnected, userProfile, loading } = useApp();
 
   if (!isConnected) {
     return (
@@ -32,7 +26,7 @@ export function UserProfile() {
     );
   }
 
-  if (isLoading) {
+  if (loading) {
       return (
           <Card className="w-full max-w-md">
               <CardHeader>
@@ -47,11 +41,11 @@ export function UserProfile() {
       )
   }
 
-  if (user) {
+  if (userProfile) {
     return (
         <Card className="w-full max-w-md">
             <CardHeader className="text-center">
-                <CardTitle className="text-3xl font-bold font-headline">Welcome, {user.username}</CardTitle>
+                <CardTitle className="text-3xl font-bold font-headline">Welcome, {userProfile.displayName}</CardTitle>
                 <CardDescription>This is your TipJar profile.</CardDescription>
             </CardHeader>
             <CardContent className="text-center space-y-4">
@@ -61,11 +55,11 @@ export function UserProfile() {
                 </div>
                 <p className="text-muted-foreground">
                     Others can now find you and tip you at: <br />
-                    <a href={`/tip/${user.username}`} className="text-primary hover:underline">{`/tip/${user.username}`}</a>
+                    <a href={`/tip/${userProfile.username}`} className="text-primary hover:underline">{`/tip/${userProfile.username}`}</a>
                 </p>
                 <div className="text-sm text-muted-foreground break-all">
                     <p className="font-medium">Your Wallet Address:</p>
-                    <p>{user.walletAddress}</p>
+                    <p>{userProfile.walletAddress}</p>
                 </div>
             </CardContent>
         </Card>

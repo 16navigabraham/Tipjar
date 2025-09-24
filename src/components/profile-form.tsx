@@ -14,38 +14,35 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAccount, useEnsName } from 'wagmi';
-import { createUser, getUserByUsername } from '@/services/user-service';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
-import { contractChain } from '@/lib/config';
 import { uploadToPinata } from '@/services/pinata-service';
-import { useRouter } from 'next/navigation';
+import { useApp } from '@/hooks/use-app';
+import { checkUsernameAvailability } from '@/services/user-service';
 
 const formSchema = z.object({
   username: z.string()
     .min(3, { message: 'Username must be at least 3 characters.' })
     .max(20, { message: 'Username must be less than 20 characters.' })
     .regex(/^[a-zA-Z0-9_]+$/, { message: 'Username can only contain letters, numbers, and underscores.' }),
+  displayName: z.string().min(1, { message: "Display name can't be empty."}).max(50),
+  bio: z.string().max(160).optional(),
   profilePicture: z.custom<FileList>().refine(files => files?.length > 0, 'Profile picture is required.'),
 });
 
 
 export function ProfileForm() {
-    const { address } = useAccount();
-    const { data: ensName } = useEnsName({ address, chainId: contractChain.id });
+    const { address, createProfile, loading } = useApp();
     const { toast } = useToast();
-    const [isLoading, setIsLoading] = useState(false);
-    const queryClient = useQueryClient();
-    const router = useRouter();
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             username: '',
+            displayName: '',
+            bio: '',
         },
         mode: 'onChange',
     });
@@ -56,54 +53,40 @@ export function ProfileForm() {
             return;
         }
 
-        setIsLoading(true);
-
         try {
-            // Check if username is available before proceeding
-            const existingUser = await getUserByUsername(values.username);
-            if (existingUser) {
-                form.setError("username", {
-                    type: "manual",
-                    message: "This username is already taken.",
-                });
-                setIsLoading(false);
+            const isAvailable = await checkUsernameAvailability(values.username);
+            if (!isAvailable) {
+                form.setError('username', { message: 'This username is already taken.' });
                 return;
             }
-
-            let pfpUrl = '';
+            
+            let avatarUrl = '';
             if (values.profilePicture.length > 0) {
                 const result = await uploadToPinata(values.profilePicture[0]);
                 if (result.success && result.url) {
-                    pfpUrl = result.url;
+                    avatarUrl = result.url;
                 } else {
                     throw new Error(result.error || "Failed to upload profile picture.");
                 }
             }
 
-            const result = await createUser({
+            await createProfile({
                 username: values.username,
-                walletAddress: address,
-                pfpUrl,
+                displayName: values.displayName,
+                bio: values.bio || '',
+                avatar: avatarUrl,
             });
 
-            if (result.success) {
-                toast({
-                    title: "Profile Created!",
-                    description: `Your username "${values.username}" is now active.`,
-                });
-                await queryClient.invalidateQueries({ queryKey: ['userProfile', address] });
-                router.push('/leaderboard');
-            } else {
-                throw new Error(result.error || "Failed to create profile.");
-            }
+            toast({
+                title: "Profile Created!",
+                description: `Your username "${values.username}" is now active.`,
+            });
         } catch (error: any) {
             toast({
                 title: "Error",
                 description: error.message || "An unexpected error occurred.",
                 variant: "destructive",
             });
-        } finally {
-            setIsLoading(false);
         }
     }
 
@@ -123,7 +106,34 @@ export function ProfileForm() {
                                 <FormItem>
                                     <FormLabel>Username</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="your_username" {...field} />
+                                        <Input placeholder="your_unique_username" {...field} />
+                                    </FormControl>
+                                    <FormDescription>This is your unique @handle.</FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="displayName"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Display Name</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="Your Name" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="bio"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Bio</FormLabel>
+                                    <FormControl>
+                                        <Textarea placeholder="Tell us about yourself" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -142,15 +152,9 @@ export function ProfileForm() {
                                 </FormItem>
                             )}
                         />
-                        {ensName && (
-                             <FormItem>
-                                <FormLabel>Base ENS Name</FormLabel>
-                                <Input value={ensName} readOnly disabled />
-                                <FormDescription>This is your ENS name on the Base network.</FormDescription>
-                            </FormItem>
-                        )}
-                        <Button type="submit" className="w-full" disabled={isLoading}>
-                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+
+                        <Button type="submit" className="w-full" disabled={loading}>
+                            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Create Profile
                         </Button>
                     </form>

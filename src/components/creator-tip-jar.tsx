@@ -1,7 +1,6 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAccount } from 'wagmi';
 import { TipForm } from './tip-form';
 import { UserDocument } from '@/services/user-service';
 import { useTip } from '@/hooks/use-tip';
@@ -15,6 +14,7 @@ import { format } from 'date-fns';
 import { Separator } from './ui/separator';
 import { Crown } from 'lucide-react';
 import Image from 'next/image';
+import { useApp } from '@/hooks/use-app';
 
 interface CreatorTipJarProps {
   creator: UserDocument;
@@ -142,28 +142,28 @@ function TopTippers({ creatorAddress }: { creatorAddress: string }) {
 
 
 export function CreatorTipJar({ creator }: CreatorTipJarProps) {
-  const { isConnected } = useAccount();
-  const { sendTip, isSending, isConfirming } = useTip(creator.walletAddress);
+  const { isConnected } = useApp();
+  const { sendTip, isSending } = useTip(creator.walletAddress as `0x${string}`);
   
-  const displayName = creator.username.startsWith('0x') ? shortenAddress(creator.username) : creator.username;
+  const displayName = creator.displayName || (creator.username.startsWith('0x') ? shortenAddress(creator.username) : creator.username);
 
   return (
     <Card className="w-full max-w-md shadow-lg">
       <CardHeader className="text-center">
         <Image 
-            src={creator.pfpUrl || `https://picsum.photos/seed/${creator.walletAddress}/100`}
+            src={creator.avatar || `https://picsum.photos/seed/${creator.walletAddress}/100`}
             alt={creator.username}
             width={100}
             height={100}
             className="rounded-full mx-auto mb-4 border-4 border-primary"
         />
-        <CardTitle className="text-2xl font-bold font-headline">Send a Tip to {displayName}</CardTitle>
-        <CardDescription>Show your appreciation for {displayName}.</CardDescription>
+        <CardTitle className="text-xl font-bold font-headline">Send a Tip to {displayName}</CardTitle>
+        <CardDescription>{creator.bio || `Show your appreciation for ${displayName}`}</CardDescription>
       </CardHeader>
       <CardContent className="p-6">
           <div className="space-y-8">
             {isConnected ? (
-              <TipForm onSendTip={sendTip} isSending={isSending} isConfirming={isConfirming} />
+              <TipForm onSendTip={sendTip} isSending={isSending} isConfirming={false} />
             ) : (
               <p className="text-center text-muted-foreground pt-8">
                 Please connect your wallet to send a tip.

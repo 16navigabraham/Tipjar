@@ -3,29 +3,21 @@
 import { Header } from '@/components/layout/header';
 import { ConnectWalletButton } from '@/components/connect-wallet-button';
 import { Button } from '@/components/ui/button';
-import { useAccount } from 'wagmi';
 import Link from 'next/link';
 import { Send, Loader2 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { getUserByWalletAddress } from '@/services/user-service';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useApp } from '@/hooks/use-app';
 
 export default function Home() {
-  const { isConnected, address } = useAccount();
+  const { isConnected, loading, isNewUser } = useApp();
   const router = useRouter();
 
-  const { data: user, isLoading } = useQuery({
-    queryKey: ['userProfile', address],
-    queryFn: () => getUserByWalletAddress(address!),
-    enabled: !!address,
-  });
-
   useEffect(() => {
-    if (isConnected && !isLoading && !user) {
+    if (isConnected && isNewUser) {
       router.push('/profile');
     }
-  }, [isConnected, isLoading, user, router]);
+  }, [isConnected, isNewUser, router]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -39,7 +31,7 @@ export default function Home() {
         </p>
         
         {isConnected ? (
-          isLoading ? (
+          loading ? (
              <div className="flex flex-col items-center space-y-4">
                 <Loader2 className="h-8 w-8 animate-spin" />
                 <p className="font-semibold">Checking your profile...</p>

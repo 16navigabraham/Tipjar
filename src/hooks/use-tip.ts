@@ -14,7 +14,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
   const queryClient = useQueryClient();
   const tipContract = useTipContract();
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   const { data: tipHistory, isLoading: isLoadingHistory } = useQuery({
     queryKey: ['tips', address],
@@ -36,7 +36,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
       return;
     }
 
-    setIsLoading(true);
+    setIsSending(true);
     toast({
       title: 'Sending Tip...',
       description: 'Please check your wallet to approve the transaction.',
@@ -83,17 +83,19 @@ export function useTip(creatorAddress?: `0x${string}`) {
         variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setIsSending(false);
       queryClient.invalidateQueries({ queryKey: ['tips', address] });
       queryClient.invalidateQueries({ queryKey: ['creator-tips', creatorAddress] });
       queryClient.invalidateQueries({ queryKey: ['top-tippers', creatorAddress] });
+      queryClient.invalidateQueries({ queryKey: ['userProfile', address] });
+      queryClient.invalidateQueries({ queryKey: ['userProfile', creatorAddress] });
     }
   };
 
   return {
     sendTip,
-    isSending: isLoading,
-    isConfirming: false, // Legacy, can be removed if not used elsewhere
+    isSending,
+    isConfirming: false,
     tipHistory,
     isLoadingHistory,
   };
