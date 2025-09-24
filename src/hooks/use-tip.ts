@@ -37,7 +37,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
 
   const { data: tipHistory, isLoading: isLoadingHistory } = useQuery({
     queryKey: ['tips', address],
-    fn: () => getTipsBySender(address!),
+    queryFn: () => getTipsBySender(address!),
     enabled: !!address && isConnected,
   });
 
