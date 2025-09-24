@@ -11,16 +11,15 @@ import { AppProvider } from '@/hooks/use-app-provider';
 
 const queryClient = new QueryClient();
 
-// It's important to create the modal inside a component so it doesn't run on the server
-// This will prevent the "WalletConnect Core is already initialized" error
+// Create modal instance outside to avoid re-creation on every render.
+// We will call createWeb3Modal inside a useEffect to ensure it's only called on the client.
+createWeb3Modal({
+  wagmiConfig,
+  projectId,
+});
+
 function Web3ModalProvider({ children }: { children: ReactNode }) {
   const { theme } = useTheme();
-
-  // Create modal instance only once
-  createWeb3Modal({
-    wagmiConfig,
-    projectId,
-  });
 
   return (
     <WagmiProvider config={wagmiConfig}>

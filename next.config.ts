@@ -1,7 +1,13 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
+  devIndicators: {
+    allowedDevOrigins: [
+        'https://6000-firebase-studio-1758656223661.cluster-64pjnskmlbaxowh5lzq6i7v4ra.cloudworkstations.dev'
+    ],
+  },
   async headers() {
     return [
       {
