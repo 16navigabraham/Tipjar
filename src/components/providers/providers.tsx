@@ -10,13 +10,15 @@ import { AppProvider } from '@/hooks/use-app-provider';
 
 const queryClient = new QueryClient();
 
-createWeb3Modal({
-  wagmiConfig,
-  projectId,
-});
-
+// It's important to create the modal inside a component so it doesn't run on the server
+// This will prevent the "WalletConnect Core is already initialized" error
 function Web3ModalProvider({ children }: { children: ReactNode }) {
   const { theme } = useTheme();
+
+  createWeb3Modal({
+    wagmiConfig,
+    projectId,
+  });
 
   return (
     <WagmiProvider config={wagmiConfig}>
