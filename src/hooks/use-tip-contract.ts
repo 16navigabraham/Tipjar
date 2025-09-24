@@ -38,10 +38,10 @@ export function useTipContract() {
   const tipWithNative = async (recipientAddress: string, tipAmountEth: string): Promise<ContractTransactionResponse> => {
     if (!contract || !signer) throw new Error('Contract or signer not initialized');
     
-    const checkedRecipient = ethers.getAddress(recipientAddress);
+    const validRecipientAddress = ethers.getAddress(recipientAddress);
     const tipAmountWei = ethers.parseEther(tipAmountEth);
     
-    const tx = await contract.tipWithNative(checkedRecipient, {
+    const tx = await contract.tipWithNative(validRecipientAddress, {
       value: tipAmountWei
     });
     return tx;
@@ -50,22 +50,17 @@ export function useTipContract() {
   const tipWithERC20Human = async (tokenAddress: string, recipientAddress: string, humanAmount: string): Promise<ContractTransactionResponse> => {
     if (!contract || !signer) throw new Error('Contract or signer not initialized');
     
-    const checkedTokenAddress = ethers.getAddress(tokenAddress);
-    const checkedRecipientAddress = ethers.getAddress(recipientAddress);
+    const validTokenAddress = ethers.getAddress(tokenAddress);
+    const validRecipientAddress = ethers.getAddress(recipientAddress);
     
-    const tokenContract = new ethers.Contract(checkedTokenAddress, erc20Abi, signer);
+    const tokenContract = new ethers.Contract(validTokenAddress, erc20Abi, signer);
     const decimals = await tokenContract.decimals();
     const tipAmount = ethers.parseUnits(humanAmount, decimals);
 
-    const signerAddress = await signer.getAddress();
-    const currentAllowance = await tokenContract.allowance(signerAddress, TIP_CONTRACT_ADDRESS);
+    const approveTx = await tokenContract.approve(TIP_CONTRACT_ADDRESS, tipAmount);
+    await approveTx.wait(); 
 
-    if (currentAllowance < tipAmount) {
-      const approveTx = await tokenContract.approve(TIP_CONTRACT_ADDRESS, tipAmount);
-      await approveTx.wait(); 
-    }
-
-    const tx = await contract.tipWithERC20(checkedTokenAddress, checkedRecipientAddress, tipAmount);
+    const tx = await contract.tipWithERC20(validTokenAddress, validRecipientAddress, tipAmount);
     return tx;
   };
 
