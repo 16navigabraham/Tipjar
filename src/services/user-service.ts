@@ -67,10 +67,16 @@ export async function createUser(user: User) {
             return { success: false, error: 'Username is already taken.' };
         }
 
-        await setDoc(userRef, {
-            ...user,
-            username: user.username // Keep original casing for display
-        });
+        const userData: Partial<User> = {
+            username: user.username, // Keep original casing for display
+            walletAddress: user.walletAddress,
+        };
+
+        if (user.pfpUrl) {
+            userData.pfpUrl = user.pfpUrl;
+        }
+
+        await setDoc(userRef, userData);
         return { success: true };
     } catch(e) {
         console.error('Error creating user:', e);
