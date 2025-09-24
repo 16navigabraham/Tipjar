@@ -24,7 +24,8 @@ export class TipContract {
 
   async tipWithNative(recipientAddress: string, tipAmountEth: string): Promise<ethers.ContractTransactionResponse> {
     const tipAmountWei = ethers.parseEther(tipAmountEth);
-    const tx = await this.contract.tipWithNative(recipientAddress, {
+    const checkedRecipient = ethers.getAddress(recipientAddress);
+    const tx = await this.contract.tipWithNative(checkedRecipient, {
       value: tipAmountWei
     });
     return tx;
@@ -35,7 +36,10 @@ export class TipContract {
     recipientAddress: string, 
     amount: string
   ): Promise<ethers.ContractTransactionResponse> {
-      const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, this.signer);
+      const checkedTokenAddress = ethers.getAddress(tokenAddress);
+      const checkedRecipientAddress = ethers.getAddress(recipientAddress);
+
+      const tokenContract = new ethers.Contract(checkedTokenAddress, ERC20_ABI, this.signer);
       const signerAddress = await this.signer.getAddress();
       const currentAllowance = await tokenContract.allowance(signerAddress, TIP_CONTRACT_ADDRESS);
       const tipAmount = BigInt(amount);
@@ -45,7 +49,7 @@ export class TipContract {
         await approveTx.wait(); // Wait for approval to be confirmed
       }
       
-      const tx = await this.contract.tipWithERC20(tokenAddress, recipientAddress, tipAmount);
+      const tx = await this.contract.tipWithERC20(checkedTokenAddress, checkedRecipientAddress, tipAmount);
       return tx;
   }
 
@@ -54,11 +58,12 @@ export class TipContract {
     recipientAddress: string, 
     humanAmount: string
   ): Promise<ethers.ContractTransactionResponse> {
-      const tokenContract = new ethers.Contract(tokenAddress, ERC20_ABI, this.signer);
+      const checkedTokenAddress = ethers.getAddress(tokenAddress);
+      const tokenContract = new ethers.Contract(checkedTokenAddress, ERC20_ABI, this.signer);
       const decimals = await tokenContract.decimals();
       const amount = ethers.parseUnits(humanAmount, decimals);
       
-      return await this.tipWithERC20(tokenAddress, recipientAddress, amount.toString());
+      return await this.tipWithERC20(checkedTokenAddress, recipientAddress, amount.toString());
   }
 
   async getOwner(): Promise<string> {
