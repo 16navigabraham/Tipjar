@@ -12,7 +12,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
   const { toast } = useToast();
   const { address, isConnected } = useAccount();
   const queryClient = useQueryClient();
-  const tipContract = useTipContract();
+  const { tipWithNative, tipWithERC20Human } = useTipContract();
 
   const [isSending, setIsSending] = useState(false);
 
@@ -31,10 +31,6 @@ export function useTip(creatorAddress?: `0x${string}`) {
       toast({ title: 'Error', description: 'Creator address not found.', variant: 'destructive' });
       return;
     }
-    if (!tipContract) {
-      toast({ title: 'Error', description: 'Tip contract not initialized. Is your wallet connected?', variant: 'destructive' });
-      return;
-    }
 
     setIsSending(true);
     toast({
@@ -45,12 +41,12 @@ export function useTip(creatorAddress?: `0x${string}`) {
     try {
       let tx;
       if (token.symbol === 'ETH') {
-        tx = await tipContract.tipWithNative(creatorAddress, amount);
+        tx = await tipWithNative(creatorAddress, amount);
       } else {
         if (!token.address) {
           throw new Error('Token address is not defined for ERC20 tip.');
         }
-        tx = await tipContract.tipWithERC20Human(token.address, creatorAddress, amount);
+        tx = await tipWithERC20Human(token.address, creatorAddress, amount);
       }
 
       toast({
