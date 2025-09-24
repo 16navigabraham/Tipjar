@@ -29,10 +29,7 @@ const formSchema = z.object({
   username: z.string()
     .min(3, { message: 'Username must be at least 3 characters.' })
     .max(20, { message: 'Username must be less than 20 characters.' })
-    .regex(/^[a-zA-Z0-9_]+$/, { message: 'Username can only contain letters, numbers, and underscores.' })
-    .refine(async (username) => {
-        return await isUsernameAvailable(username);
-    }, {message: 'This username is already taken.'}),
+    .regex(/^[a-zA-Z0-9_]+$/, { message: 'Username can only contain letters, numbers, and underscores.' }),
   profilePicture: z.custom<FileList>().refine(files => files?.length > 0, 'Profile picture is required.'),
 });
 
@@ -62,6 +59,16 @@ export function ProfileForm() {
         setIsLoading(true);
 
         try {
+            const usernameAvailable = await isUsernameAvailable(values.username);
+            if (!usernameAvailable) {
+                form.setError("username", {
+                    type: "manual",
+                    message: "This username is already taken.",
+                });
+                setIsLoading(false);
+                return;
+            }
+
             let pfpUrl = '';
             if (values.profilePicture.length > 0) {
                 const result = await uploadToPinata(values.profilePicture[0]);
