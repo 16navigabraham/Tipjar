@@ -17,7 +17,7 @@ export class TipContract {
   private contract: ethers.Contract;
   private signer: ethers.Signer;
 
-  constructor(signer: ethers.Signer) {
+  constructor(provider: ethers.Provider, signer: ethers.Signer) {
     this.signer = signer;
     this.contract = new ethers.Contract(TIP_CONTRACT_ADDRESS, TIP_CONTRACT_ABI, signer);
   }
@@ -86,12 +86,12 @@ export function useEthersAdapters() {
 
 // Main hook to be used in components
 export function useTipContract() {
-  const { signer } = useEthersAdapters();
+  const { provider, signer } = useEthersAdapters();
 
   const tipContract = useMemo(() => {
-    if (!signer) return undefined;
-    return new TipContract(signer);
-  }, [signer]);
+    if (!provider || !signer) return undefined;
+    return new TipContract(provider, signer);
+  }, [provider, signer]);
 
   return tipContract;
 }
