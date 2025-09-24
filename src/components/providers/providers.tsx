@@ -16,10 +16,12 @@ const queryClient = new QueryClient();
 function Web3ModalProvider({ children }: { children: ReactNode }) {
   const { theme } = useTheme();
 
-  createWeb3Modal({
-    wagmiConfig,
-    projectId,
-  });
+  useEffect(() => {
+    createWeb3Modal({
+      wagmiConfig,
+      projectId,
+    });
+  }, []);
 
   return (
     <WagmiProvider config={wagmiConfig}>
