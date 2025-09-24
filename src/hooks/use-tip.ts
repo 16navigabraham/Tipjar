@@ -33,19 +33,24 @@ export function useTip(creatorAddress?: `0x${string}`) {
     }
 
     setIsSending(true);
-    toast({
-      title: 'Sending Tip...',
-      description: 'Please check your wallet to approve the transaction.',
-    });
+    
 
     try {
       let tx;
       if (token.symbol === 'ETH') {
+        toast({
+          title: 'Sending Tip...',
+          description: 'Please check your wallet to approve the transaction.',
+        });
         tx = await tipWithNative(creatorAddress, amount);
       } else {
         if (!token.address) {
           throw new Error('Token address is not defined for ERC20 tip.');
         }
+        toast({
+          title: 'Approving Token...',
+          description: 'Please check your wallet to approve token spending.',
+        });
         tx = await tipWithERC20Human(token.address, creatorAddress, amount);
       }
 

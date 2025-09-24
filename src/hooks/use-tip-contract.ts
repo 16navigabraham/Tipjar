@@ -57,8 +57,13 @@ export function useTipContract() {
     const decimals = await tokenContract.decimals();
     const tipAmount = ethers.parseUnits(humanAmount, decimals);
 
-    const approveTx = await tokenContract.approve(TIP_CONTRACT_ADDRESS, tipAmount);
-    await approveTx.wait(); 
+    const signerAddress = await signer.getAddress();
+    const currentAllowance = await tokenContract.allowance(signerAddress, TIP_CONTRACT_ADDRESS);
+
+    if (currentAllowance < tipAmount) {
+        const approveTx = await tokenContract.approve(TIP_CONTRACT_ADDRESS, tipAmount);
+        await approveTx.wait(); 
+    }
 
     const tx = await contract.tipWithERC20(validTokenAddress, validRecipientAddress, tipAmount);
     return tx;
