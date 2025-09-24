@@ -21,6 +21,9 @@ export function Header() {
              <Link href="/tip" className="text-muted-foreground transition-colors hover:text-foreground">
                 Tip
              </Link>
+             <Link href="/profile" className="text-muted-foreground transition-colors hover:text-foreground">
+                Profile
+             </Link>
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end gap-2">
