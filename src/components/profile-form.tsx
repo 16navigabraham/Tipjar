@@ -31,7 +31,7 @@ const formSchema = z.object({
     .max(20, { message: 'Username must be less than 20 characters.' })
     .regex(/^[a-zA-Z0-9_]+$/, { message: 'Username can only contain letters, numbers, and underscores.' })
     .refine(async (username) => {
-        return await isUsernameAvailable(username);
+        return isUsernameAvailable(username);
     }, {message: 'This username is already taken.'}),
   profilePicture: z.custom<FileList>().refine(files => files?.length > 0, 'Profile picture is required.'),
 });
