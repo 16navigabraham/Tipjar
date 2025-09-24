@@ -13,17 +13,6 @@ export interface UserDocument extends User {
     id: string;
 }
 
-export async function isUsernameAvailable(username: string): Promise<boolean> {
-    try {
-        const userRef = doc(db, 'users', username.toLowerCase());
-        const docSnap = await getDoc(userRef);
-        return !docSnap.exists();
-    } catch(e) {
-        console.error("Error checking username availability:", e);
-        return false; // Fail safe
-    }
-}
-
 export async function getUserByUsername(username: string): Promise<UserDocument | null> {
     try {
         const userRef = doc(db, 'users', username.toLowerCase());
@@ -73,8 +62,8 @@ export async function createUser(user: User) {
         // Use the lowercase username as the document ID for case-insensitive lookups
         const userRef = doc(db, 'users', user.username.toLowerCase());
         
-        const isAvailable = await isUsernameAvailable(user.username);
-        if (!isAvailable) {
+        const existingUser = await getDoc(userRef);
+        if (existingUser.exists()) {
             return { success: false, error: 'Username is already taken.' };
         }
 

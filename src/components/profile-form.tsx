@@ -16,7 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccount, useEnsName } from 'wagmi';
-import { createUser, isUsernameAvailable } from '@/services/user-service';
+import { createUser, getUserByUsername } from '@/services/user-service';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -59,8 +59,9 @@ export function ProfileForm() {
         setIsLoading(true);
 
         try {
-            const usernameAvailable = await isUsernameAvailable(values.username);
-            if (!usernameAvailable) {
+            // Check if username is available before proceeding
+            const existingUser = await getUserByUsername(values.username);
+            if (existingUser) {
                 form.setError("username", {
                     type: "manual",
                     message: "This username is already taken.",
