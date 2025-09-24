@@ -162,7 +162,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
       });
       setTipData(null);
     }
-  }, [isConfirming, isConfirmed, tipError, approveError, toast, hash, address, queryClient, tipData, creatorAddress]);
+  }, [isConfirming, isConfirmed, tipError, approveError, toast, hash, address, queryClient, tipData, creatorAddress, refetchAllowance]);
 
   const isLoading = isSending || isConfirming || isApproving || isConfirmingApproval;
 
@@ -170,7 +170,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
     sendTip,
     isSending: isLoading,
     isConfirming: isConfirming,
-    tipHistory: [],
-    isLoadingHistory: false,
+    tipHistory,
+    isLoadingHistory,
   };
 }
