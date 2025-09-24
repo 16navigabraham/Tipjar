@@ -37,12 +37,12 @@ export function useTip(creatorAddress?: `0x${string}`) {
 
   const { data: tipHistory, isLoading: isLoadingHistory } = useQuery({
     queryKey: ['tips', address],
-    queryFn: () => getTipsBySender(address!),
+    fn: () => getTipsBySender(address!),
     enabled: !!address && isConnected,
   });
 
   const sendTip = async (amount: string, token: Token, message?: string) => {
-    if (!isConnected) {
+    if (!isConnected || !address) {
       toast({ title: 'Error', description: 'Please connect your wallet first.', variant: 'destructive' });
       return;
     }
@@ -65,6 +65,11 @@ export function useTip(creatorAddress?: `0x${string}`) {
                 value: tipAmount,
             });
         } else {
+            if (!token.address) {
+                 toast({ title: 'Error', description: 'Selected token has no address.', variant: 'destructive' });
+                 setTipData(null);
+                 return;
+            }
             // ERC20 logic
             const needsApproval = allowance === undefined || allowance < tipAmount;
             if (needsApproval) {
@@ -86,8 +91,8 @@ export function useTip(creatorAddress?: `0x${string}`) {
         }
     } catch(e: any) {
         toast({
-            title: 'Error',
-            description: e.shortMessage || 'An unexpected error occurred.',
+            title: 'Transaction Error',
+            description: e.shortMessage || 'The transaction was cancelled or failed.',
             variant: 'destructive',
         });
         setTipData(null);
@@ -96,8 +101,14 @@ export function useTip(creatorAddress?: `0x${string}`) {
 
   // Effect to handle post-approval tipping
   useEffect(() => {
-    async function sendErc20Tip() {
+    const sendErc20Tip = async () => {
       if (isApproved && tipData && creatorAddress) {
+        if (!tipData.token.address) {
+          console.error("Token address is missing for ERC20 tip.");
+          setTipData(null);
+          return;
+        }
+
         toast({ title: 'Approval Successful', description: `Now sending your ${tipData.token.symbol} tip.` });
         const tipAmount = parseUnits(tipData.amount, tipData.token.decimals);
         try {
@@ -105,7 +116,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
               address: contractAddress,
               abi: tipJarAbi,
               functionName: 'tipWithERC20',
-              args: [tipData.token.address!, creatorAddress, tipAmount],
+              args: [tipData.token.address, creatorAddress, tipAmount],
           });
         } catch (e: any) {
           toast({
@@ -118,7 +129,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
       }
     }
     sendErc20Tip();
-  }, [isApproved]);
+  }, [isApproved, tipData, creatorAddress, writeContractAsync, toast]);
 
 
   useEffect(() => {
@@ -156,8 +167,8 @@ export function useTip(creatorAddress?: `0x${string}`) {
     const error = tipError || approveError;
     if (error) {
       toast({
-        title: 'Error',
-        description: error.shortMessage || 'An unexpected error occurred.',
+        title: 'Transaction Error',
+        description: error.shortMessage || 'The transaction was cancelled or failed.',
         variant: 'destructive',
       });
       setTipData(null);
