@@ -2,29 +2,51 @@
 'use client';
 
 import { useMemo } from 'react';
-import { BrowserProvider, JsonRpcSigner, ethers, type ContractTransactionResponse } from 'ethers';
-import { useAccount, useClient } from 'wagmi';
-import { type HttpTransport } from 'viem';
+import { type BrowserProvider, type JsonRpcSigner, ethers } from 'ethers';
+import { usePublicClient, useConnectorClient } from 'wagmi';
+import { type PublicClient, type WalletClient, type HttpTransport } from 'viem';
 import { tipJarAbi } from '@/lib/abi/TipJar';
 import { erc20Abi } from '@/lib/abi/erc20';
 import { contractAddress as TIP_CONTRACT_ADDRESS } from '@/lib/config';
 
 // Hook to get a viem PublicClient and WalletClient and convert them to ethers.js Provider and Signer
+function publicClientToProvider(publicClient: PublicClient) {
+  if (!publicClient) return undefined;
+  const { chain, transport } = publicClient;
+  const network = {
+    chainId: chain.id,
+    name: chain.name,
+    ensAddress: chain.contracts?.ensRegistry?.address,
+  };
+  if (transport.type === 'fallback')
+    return new ethers.FallbackProvider(
+      (transport.transports as ReturnType<HttpTransport>[]).map(
+        ({ value }) => new ethers.JsonRpcProvider(value?.url, network)
+      )
+    );
+  return new ethers.JsonRpcProvider(transport.url, network);
+}
+
+function walletClientToSigner(walletClient: WalletClient) {
+  if (!walletClient) return undefined;
+  const { account, chain, transport } = walletClient;
+  const network = {
+    chainId: chain.id,
+    name: chain.name,
+    ensAddress: chain.contracts?.ensRegistry?.address,
+  };
+  const provider = new ethers.BrowserProvider(transport, network);
+  return new ethers.JsonRpcSigner(provider, account.address);
+}
+
 export function useEthersAdapters() {
-    const client = useClient<HttpTransport>();
-    const { chain, address } = useAccount();
+  const publicClient = usePublicClient();
+  const { data: walletClient } = useConnectorClient();
 
-    const provider = useMemo(() => {
-        if (!client || !chain) return undefined;
-        return new BrowserProvider(client, chain.id);
-    }, [client, chain]);
+  const provider = useMemo(() => publicClientToProvider(publicClient as PublicClient), [publicClient]);
+  const signer = useMemo(() => walletClientToSigner(walletClient as WalletClient), [walletClient]);
 
-    const signer = useMemo(() => {
-        if (!provider || !address) return undefined;
-        return new JsonRpcSigner(provider, address);
-    }, [provider, address]);
-
-    return { provider, signer };
+  return { provider, signer };
 }
 
 // Helper function to safely validate and checksum addresses
@@ -40,7 +62,7 @@ function validateAddress(address: string): string {
             throw new Error(`Invalid address format: ${address}`);
         }
     }
-  }
+}
 
 // Main hook to be used in components
 export function useTipContract() {
@@ -51,7 +73,7 @@ export function useTipContract() {
     return new ethers.Contract(TIP_CONTRACT_ADDRESS, tipJarAbi, signer);
   }, [signer]);
 
-  const tipWithNative = async (recipientAddress: string, tipAmountEth: string): Promise<ContractTransactionResponse> => {
+  const tipWithNative = async (recipientAddress: string, tipAmountEth: string): Promise<ethers.ContractTransactionResponse> => {
     if (!contract || !signer) throw new Error('Contract or signer not initialized');
     
     const validRecipientAddress = validateAddress(recipientAddress);
@@ -63,7 +85,7 @@ export function useTipContract() {
     return tx;
   };
 
-  const tipWithERC20Human = async (tokenAddress: string, recipientAddress: string, humanAmount: string, decimals: number): Promise<ContractTransactionResponse> => {
+  const tipWithERC20Human = async (tokenAddress: string, recipientAddress: string, humanAmount: string, decimals: number): Promise<ethers.ContractTransactionResponse> => {
     if (!contract || !signer) throw new Error('Contract or signer not initialized');
     
     const validTokenAddress = validateAddress(tokenAddress);
