@@ -31,7 +31,7 @@ const formSchema = z.object({
     .max(20, { message: 'Username must be less than 20 characters.' })
     .regex(/^[a-zA-Z0-9_]+$/, { message: 'Username can only contain letters, numbers, and underscores.' })
     .refine(async (username) => {
-        return isUsernameAvailable(username);
+        return await isUsernameAvailable(username);
     }, {message: 'This username is already taken.'}),
   profilePicture: z.custom<FileList>().refine(files => files?.length > 0, 'Profile picture is required.'),
 });
@@ -61,39 +61,41 @@ export function ProfileForm() {
 
         setIsLoading(true);
 
-        let pfpUrl = '';
-        if (values.profilePicture.length > 0) {
-            const result = await uploadToPinata(values.profilePicture[0]);
-            if (result.success && result.url) {
-                pfpUrl = result.url;
-            } else {
-                toast({ title: "Error", description: result.error || "Failed to upload profile picture.", variant: "destructive" });
-                setIsLoading(false);
-                return;
+        try {
+            let pfpUrl = '';
+            if (values.profilePicture.length > 0) {
+                const result = await uploadToPinata(values.profilePicture[0]);
+                if (result.success && result.url) {
+                    pfpUrl = result.url;
+                } else {
+                    throw new Error(result.error || "Failed to upload profile picture.");
+                }
             }
-        }
 
-        const result = await createUser({
-            username: values.username,
-            walletAddress: address,
-            pfpUrl,
-        });
-
-        setIsLoading(false);
-
-        if (result.success) {
-            toast({
-                title: "Profile Created!",
-                description: `Your username "${values.username}" is now active.`,
+            const result = await createUser({
+                username: values.username,
+                walletAddress: address,
+                pfpUrl,
             });
-            queryClient.invalidateQueries({ queryKey: ['userProfile', address] });
-            router.push('/leaderboard');
-        } else {
-             toast({
+
+            if (result.success) {
+                toast({
+                    title: "Profile Created!",
+                    description: `Your username "${values.username}" is now active.`,
+                });
+                await queryClient.invalidateQueries({ queryKey: ['userProfile', address] });
+                router.push('/leaderboard');
+            } else {
+                throw new Error(result.error || "Failed to create profile.");
+            }
+        } catch (error: any) {
+            toast({
                 title: "Error",
-                description: result.error || "Failed to create profile.",
+                description: error.message || "An unexpected error occurred.",
                 variant: "destructive",
             });
+        } finally {
+            setIsLoading(false);
         }
     }
 
