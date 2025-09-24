@@ -5,10 +5,27 @@ import { ConnectWalletButton } from '@/components/connect-wallet-button';
 import { Button } from '@/components/ui/button';
 import { useAccount } from 'wagmi';
 import Link from 'next/link';
-import { Send } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { getUserByWalletAddress } from '@/services/user-service';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
-  const { isConnected } = useAccount();
+  const { isConnected, address } = useAccount();
+  const router = useRouter();
+
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['userProfile', address],
+    queryFn: () => getUserByWalletAddress(address!),
+    enabled: !!address,
+  });
+
+  useEffect(() => {
+    if (isConnected && !isLoading && !user) {
+      router.push('/profile');
+    }
+  }, [isConnected, isLoading, user, router]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -22,15 +39,22 @@ export default function Home() {
         </p>
         
         {isConnected ? (
-          <div className="flex flex-col items-center space-y-4">
-            <p className="font-semibold">You're connected!</p>
-            <Button asChild size="lg">
-              <Link href="/tip">
-                <Send className="mr-2 h-4 w-4" />
-                Send a Tip Now
-              </Link>
-            </Button>
-          </div>
+          isLoading ? (
+             <div className="flex flex-col items-center space-y-4">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <p className="font-semibold">Checking your profile...</p>
+             </div>
+          ) : (
+            <div className="flex flex-col items-center space-y-4">
+              <p className="font-semibold">You're connected!</p>
+              <Button asChild size="lg">
+                <Link href="/tip">
+                  <Send className="mr-2 h-4 w-4" />
+                  Send a Tip Now
+                </Link>
+              </Button>
+            </div>
+          )
         ) : (
           <ConnectWalletButton />
         )}
