@@ -122,3 +122,37 @@ export async function getTopTippers(receiver: string, limit: number = 3): Promis
         return [];
     }
 }
+
+
+export async function getGlobalTopTippers(limit: number = 10): Promise<TopTipper[]> {
+    try {
+        const tipsCollection = collection(db, 'tips');
+        // Only consider ETH tips for the global leaderboard for simplicity
+        const q = query(tipsCollection, where('token', '==', 'ETH'));
+        const querySnapshot = await getDocs(q);
+
+        const tipperStats: { [sender: string]: number } = {};
+
+        querySnapshot.forEach(doc => {
+            const tip = doc.data() as Tip;
+            const amount = parseFloat(tip.amount);
+            if (!isNaN(amount)) {
+                if (tipperStats[tip.sender]) {
+                    tipperStats[tip.sender] += amount;
+                } else {
+                    tipperStats[tip.sender] = amount;
+                }
+            }
+        });
+
+        const sortedTippers = Object.entries(tipperStats)
+            .map(([sender, totalAmount]) => ({ sender, totalAmount, token: 'ETH' }))
+            .sort((a, b) => b.totalAmount - a.totalAmount);
+
+        return sortedTippers.slice(0, limit);
+
+    } catch (error) {
+        console.error('Error calculating global top tippers:', error);
+        return [];
+    }
+}

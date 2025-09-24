@@ -1,45 +1,17 @@
 
 import { Header } from '@/components/layout/header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { getTopTippers } from '@/services/tip-service';
-import { getAllUsers, getUserProfile } from '@/services/user-service';
+import { getGlobalTopTippers } from '@/services/tip-service';
+import { getUserProfile } from '@/services/user-service';
 import { shortenAddress } from '@/lib/utils';
 import { Crown } from 'lucide-react';
 import Image from 'next/image';
 
 async function Leaderboard() {
-    // Note: This is a simplified global leaderboard.
-    // For a real app, you'd want to aggregate top tippers across all creators.
-    // We are fetching all users and then getting top tippers for each.
-    const users = await getAllUsers();
-    const allTopTippers: { sender: string, totalAmount: number, receiver: string, token: string }[] = [];
-
-    for (const user of users) {
-        const tippers = await getTopTippers(user.walletAddress, 10);
-        tippers.forEach(tipper => {
-            allTopTippers.push({ ...tipper, receiver: user.username });
-        });
-    }
-
-    const aggregatedTippers: { [sender: string]: number } = {};
-    allTopTippers.forEach(tipper => {
-        if(tipper.token === 'ETH') {
-            const amount = parseFloat(tipper.totalAmount.toString());
-            if (aggregatedTippers[tipper.sender]) {
-                aggregatedTippers[tipper.sender] += amount;
-            } else {
-                aggregatedTippers[tipper.sender] = amount;
-            }
-        }
-    });
-
-    const sortedGlobalTippers = Object.entries(aggregatedTippers)
-        .map(([sender, totalAmount]) => ({ sender, totalAmount }))
-        .sort((a, b) => b.totalAmount - a.totalAmount)
-        .slice(0, 10);
+    const topTippers = await getGlobalTopTippers(10);
     
     const userProfiles = await Promise.all(
-      sortedGlobalTippers.map(async (tipper) => {
+      topTippers.map(async (tipper) => {
         const user = await getUserProfile(tipper.sender);
         return {
           ...tipper,
