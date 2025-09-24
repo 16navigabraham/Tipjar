@@ -47,16 +47,18 @@ export function useTipContract() {
     return tx;
   };
 
-  const tipWithERC20 = async (tokenAddress: string, recipientAddress: string, amount: string): Promise<ContractTransactionResponse> => {
+  const tipWithERC20Human = async (tokenAddress: string, recipientAddress: string, humanAmount: string): Promise<ContractTransactionResponse> => {
     if (!contract || !signer) throw new Error('Contract or signer not initialized');
-
+    
     const checkedTokenAddress = ethers.getAddress(tokenAddress);
     const checkedRecipientAddress = ethers.getAddress(recipientAddress);
     
     const tokenContract = new ethers.Contract(checkedTokenAddress, erc20Abi, signer);
+    const decimals = await tokenContract.decimals();
+    const tipAmount = ethers.parseUnits(humanAmount, decimals);
+
     const signerAddress = await signer.getAddress();
     const currentAllowance = await tokenContract.allowance(signerAddress, TIP_CONTRACT_ADDRESS);
-    const tipAmount = BigInt(amount);
 
     if (currentAllowance < tipAmount) {
       const approveTx = await tokenContract.approve(TIP_CONTRACT_ADDRESS, tipAmount);
@@ -65,17 +67,6 @@ export function useTipContract() {
 
     const tx = await contract.tipWithERC20(checkedTokenAddress, checkedRecipientAddress, tipAmount);
     return tx;
-  };
-  
-  const tipWithERC20Human = async (tokenAddress: string, recipientAddress: string, humanAmount: string): Promise<ContractTransactionResponse> => {
-    if (!signer) throw new Error('Signer not initialized');
-    
-    const checkedTokenAddress = ethers.getAddress(tokenAddress);
-    const tokenContract = new ethers.Contract(checkedTokenAddress, erc20Abi, signer);
-    const decimals = await tokenContract.decimals();
-    const amount = ethers.parseUnits(humanAmount, decimals);
-    
-    return await tipERC20(tokenAddress, recipientAddress, amount.toString());
   };
 
   return { tipWithNative, tipWithERC20Human };
