@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import { UserProfile, getUserProfile, createUserProfile as createUserProfileService } from '@/services/user-service';
