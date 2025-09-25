@@ -11,11 +11,11 @@ import { AppProvider } from '@/hooks/use-app-provider';
 
 const queryClient = new QueryClient();
 
+// Create modal instance outside to avoid re-creation on every render.
 if (!projectId) {
     throw new Error('WalletConnect Project ID is not defined. Please check your environment variables.');
 }
 
-// Create modal instance outside to avoid re-creation on every render.
 createWeb3Modal({
   wagmiConfig,
   projectId,
