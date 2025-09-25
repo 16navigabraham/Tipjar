@@ -44,8 +44,15 @@ export function useEthersAdapters() {
   const publicClient = usePublicClient();
   const { data: walletClient } = useConnectorClient();
 
-  const provider = useMemo(() => publicClientToProvider(publicClient as PublicClient), [publicClient]);
-  const signer = useMemo(() => walletClientToSigner(walletClient as WalletClient), [walletClient]);
+  const provider = useMemo(() => {
+    if(!publicClient) return undefined;
+    return publicClientToProvider(publicClient as PublicClient)
+  }, [publicClient]);
+
+  const signer = useMemo(() => {
+    if(!walletClient) return undefined;
+    return walletClientToSigner(walletClient as WalletClient)
+  }, [walletClient]);
 
   return { provider, signer };
 }

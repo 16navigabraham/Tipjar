@@ -1,4 +1,3 @@
-
 'use client';
 
 import { createWeb3Modal } from '@web3modal/wagmi/react';
