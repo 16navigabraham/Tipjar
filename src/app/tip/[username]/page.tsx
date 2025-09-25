@@ -22,7 +22,9 @@ export default function CreatorTipPage() {
   const { data: ensAddress, isLoading: isLoadingEns } = useEnsAddress({
     name: usernameOrAddress,
     chainId: mainnet.id,
-    enabled: isEnsName,
+    query: {
+      enabled: isEnsName,
+    }
   });
 
   useEffect(() => {
