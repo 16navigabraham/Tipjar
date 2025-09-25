@@ -17,6 +17,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
   const { tipWithNative, tipWithERC20Human } = useTipContract();
 
   const [isSending, setIsSending] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   const { data: tipHistory, isLoading: isLoadingHistory } = useQuery({
     queryKey: ['tips', address],
@@ -35,12 +36,13 @@ export function useTip(creatorAddress?: `0x${string}`) {
     }
 
     setIsSending(true);
+    setIsConfirming(false);
 
     try {
       let tx;
       toast({
         title: 'Preparing Transaction...',
-        description: 'Please check your wallet.',
+        description: 'Please check your wallet to approve and send.',
       });
 
       if (token.symbol === 'ETH') {
@@ -51,10 +53,13 @@ export function useTip(creatorAddress?: `0x${string}`) {
         }
         tx = await tipWithERC20Human(token.address, creatorAddress, amount, token.decimals);
       }
+      
+      setIsSending(false);
+      setIsConfirming(true);
 
       toast({
         title: 'Transaction Submitted',
-        description: 'Waiting for confirmation...',
+        description: 'Waiting for blockchain confirmation...',
       });
 
       await tx.wait();
@@ -85,6 +90,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
       });
     } finally {
       setIsSending(false);
+      setIsConfirming(false);
       queryClient.invalidateQueries({ queryKey: ['tips', address] });
       queryClient.invalidateQueries({ queryKey: ['creator-tips', creatorAddress] });
       queryClient.invalidateQueries({ queryKey: ['top-tippers', creatorAddress] });
@@ -97,7 +103,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
   return {
     sendTip,
     isSending,
-    isConfirming: false,
+    isConfirming,
     tipHistory,
     isLoadingHistory,
   };

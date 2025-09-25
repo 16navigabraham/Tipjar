@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Send, Coins, Bot } from 'lucide-react';
+import { Send, Coins, Bot, Loader2 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useState, useEffect } from 'react';
@@ -55,7 +55,7 @@ export function DirectTipForm() {
   });
 
   const recipientValue = form.watch('recipient');
-  const { sendTip, isSending } = useTip(recipientValue as `0x${string}`);
+  const { sendTip, isSending, isConfirming } = useTip(recipientValue as `0x${string}`);
 
   const amountValue = form.watch('amount');
   const selectedTokenSymbol = form.watch('tokenSymbol');
@@ -105,6 +105,8 @@ export function DirectTipForm() {
     await sendTip(values.amount, token, values.message);
     form.reset();
   }
+
+  const isLoading = isSending || isConfirming;
 
   return (
     <Form {...form}>
@@ -225,8 +227,13 @@ export function DirectTipForm() {
           </div>
         )}
         
-        <Button type="submit" className="w-full" size="lg" disabled={!isConnected || isSending}>
-          {isSending ? 'Sending...' : (
+        <Button type="submit" className="w-full" size="lg" disabled={!isConnected || isLoading}>
+          {isLoading ? (
+            <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {isConfirming ? 'Confirming...' : 'Sending...'}
+            </>
+          ) : (
             <>
               <Send className="mr-2 h-4 w-4" />
               Send {form.getValues('amount') || 'Tip'} {selectedTokenSymbol}

@@ -143,7 +143,7 @@ function TopTippers({ creatorAddress }: { creatorAddress: string }) {
 
 export function CreatorTipJar({ creator }: CreatorTipJarProps) {
   const { isConnected } = useApp();
-  const { sendTip, isSending } = useTip(creator.walletAddress as `0x${string}`);
+  const { sendTip, isSending, isConfirming } = useTip(creator.walletAddress as `0x${string}`);
   
   const displayName = creator.displayName || (creator.username.startsWith('0x') ? shortenAddress(creator.username) : creator.username);
 
@@ -163,7 +163,7 @@ export function CreatorTipJar({ creator }: CreatorTipJarProps) {
       <CardContent className="p-6">
           <div className="space-y-8">
             {isConnected ? (
-              <TipForm onSendTip={sendTip} isSending={isSending} isConfirming={false} />
+              <TipForm onSendTip={sendTip} isSending={isSending} isConfirming={isConfirming} />
             ) : (
               <p className="text-center text-muted-foreground pt-8">
                 Please connect your wallet to send a tip.
