@@ -28,7 +28,7 @@ function publicClientToProvider(publicClient: PublicClient) {
 }
 
 function walletClientToSigner(walletClient: WalletClient) {
-    if (!walletClient || !walletClient.chain) return undefined;
+    if (!walletClient || !walletClient.chain || !walletClient.account) return undefined;
     const { account, chain, transport } = walletClient;
     const network = {
         chainId: chain.id,
