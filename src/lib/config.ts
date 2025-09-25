@@ -1,10 +1,11 @@
+
 import { defaultWagmiConfig } from '@web3modal/wagmi/react/config';
 import { mainnet, polygon, arbitrum, base } from 'wagmi/chains';
 
 // 0. Your WalletConnect Cloud project ID
 export const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
 
-if (!projectId) throw new Error('Project ID is not defined');
+if (!projectId) throw new Error('Project ID is not defined in environment variables.');
 
 // 1. Your creator wallet address
 export const creatorAddress = '0x3525a342340576D4229415494848316239B27f12'; // This is now the owner of the contract
