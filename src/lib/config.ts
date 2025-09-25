@@ -1,5 +1,5 @@
 
-import { defaultWagmiConfig } from '@reown/app-kit/react';
+import { defaultWagmiConfig } from '@web3modal/wagmi/react';
 import { mainnet, polygon, arbitrum, base } from 'wagmi/chains';
 
 // 0. Your WalletConnect Cloud project ID
