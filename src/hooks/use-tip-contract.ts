@@ -11,7 +11,7 @@ import { contractAddress as TIP_CONTRACT_ADDRESS } from '@/lib/config';
 
 // Hook to get a viem PublicClient and WalletClient and convert them to ethers.js Provider and Signer
 function publicClientToProvider(publicClient: PublicClient) {
-  if (!publicClient) return undefined;
+  if (!publicClient || !publicClient.chain) return undefined;
   const { chain, transport } = publicClient;
   const network = {
     chainId: chain.id,
@@ -28,15 +28,16 @@ function publicClientToProvider(publicClient: PublicClient) {
 }
 
 function walletClientToSigner(walletClient: WalletClient) {
-  if (!walletClient) return undefined;
-  const { account, chain, transport } = walletClient;
-  const network = {
-    chainId: chain.id,
-    name: chain.name,
-    ensAddress: chain.contracts?.ensRegistry?.address,
-  };
-  const provider = new ethers.BrowserProvider(transport, network);
-  return new ethers.JsonRpcSigner(provider, account.address);
+    if (!walletClient || !walletClient.chain) return undefined;
+    const { account, chain, transport } = walletClient;
+    const network = {
+        chainId: chain.id,
+        name: chain.name,
+        ensAddress: chain.contracts?.ensRegistry?.address,
+    };
+    const provider = new ethers.BrowserProvider(transport, network);
+    const signer = new ethers.JsonRpcSigner(provider, account.address);
+    return signer;
 }
 
 export function useEthersAdapters() {
