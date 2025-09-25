@@ -1,7 +1,5 @@
 'use server';
 
-import { base } from 'wagmi/chains';
-
 const ALCHEMY_URL = process.env.NEXT_PUBLIC_ALCHEMY_BASE_URL;
 
 if (!ALCHEMY_URL) {
