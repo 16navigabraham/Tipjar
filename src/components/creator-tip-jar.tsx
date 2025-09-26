@@ -114,7 +114,7 @@ function TopTippers({ creatorAddress }: { creatorAddress: string }) {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-center">Top Supporters (ETH)</h3>
+      <h3 className="text-lg font-semibold text-center">Top Supporters</h3>
       {isLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-8 w-full" />
@@ -129,7 +129,7 @@ function TopTippers({ creatorAddress }: { creatorAddress: string }) {
                 <Crown className={`w-5 h-5 ${getTrophyColor(index)}`} />
                 <span className="font-medium">{shortenAddress(tipper.sender)}</span>
               </div>
-              <span className="font-semibold">{tipper.totalAmount.toFixed(4)} ETH</span>
+              <span className="font-semibold">${tipper.totalAmount.toFixed(2)} USD</span>
             </li>
           ))}
         </ul>

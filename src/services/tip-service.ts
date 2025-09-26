@@ -1,7 +1,8 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { addDoc, collection, getDocs, orderBy, query, serverTimestamp, where, Timestamp, limit as firestoreLimit } from 'firebase/firestore';
+import { addDoc, collection, getDocs, orderBy, query, serverTimestamp, where, Timestamp, getDocsFromCache } from 'firebase/firestore';
+import { getPrices } from './price-service';
 
 export interface Tip {
   receiver: string;
@@ -25,7 +26,7 @@ export interface TipDocument extends Omit<Tip, 'timestamp'> {
 export interface TopTipper {
     sender: string;
     totalAmount: number;
-    token: string;
+    // token is now irrelevant as we aggregate USD value
 }
 
 
@@ -86,33 +87,26 @@ export async function getTipsByReceiver(receiver: string): Promise<TipDocument[]
 export async function getTopTippers(receiver: string, limit: number = 3): Promise<TopTipper[]> {
     try {
         const tips = await getTipsByReceiver(receiver);
+        const prices = await getPrices();
         
-        const tipperStats: { [sender: string]: { [token: string]: number } } = {};
+        const tipperStats: { [sender: string]: number } = {};
 
         tips.forEach(tip => {
             const amount = parseFloat(tip.amount);
-            if (!isNaN(amount)) {
-                if (!tipperStats[tip.sender]) {
-                    tipperStats[tip.sender] = {};
-                }
-                if (tipperStats[tip.sender][tip.token]) {
-                    tipperStats[tip.sender][tip.token] += amount;
+            const price = prices[tip.token.toLowerCase()] || 0;
+            const usdValue = amount * price;
+
+            if (!isNaN(usdValue)) {
+                if (tipperStats[tip.sender]) {
+                    tipperStats[tip.sender] += usdValue;
                 } else {
-                    tipperStats[tip.sender][tip.token] = amount;
+                    tipperStats[tip.sender] = usdValue;
                 }
             }
         });
         
-        const allTippers: TopTipper[] = [];
-        Object.entries(tipperStats).forEach(([sender, tokenAmounts]) => {
-            Object.entries(tokenAmounts).forEach(([token, totalAmount]) => {
-                if(token === 'ETH') { // only show ETH for now
-                     allTippers.push({ sender, totalAmount, token });
-                }
-            });
-        });
-
-        const sortedTippers = allTippers
+        const sortedTippers = Object.entries(tipperStats)
+            .map(([sender, totalAmount]) => ({ sender, totalAmount }))
             .sort((a, b) => b.totalAmount - a.totalAmount);
             
         return sortedTippers.slice(0, limit);
@@ -127,26 +121,28 @@ export async function getTopTippers(receiver: string, limit: number = 3): Promis
 export async function getGlobalTopTippers(limit: number = 10): Promise<TopTipper[]> {
     try {
         const tipsCollection = collection(db, 'tips');
-        // Only consider ETH tips for the global leaderboard for simplicity
-        const q = query(tipsCollection, where('token', '==', 'ETH'));
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await getDocs(tipsCollection);
+        const prices = await getPrices();
 
         const tipperStats: { [sender: string]: number } = {};
 
         querySnapshot.forEach(doc => {
             const tip = doc.data() as Tip;
             const amount = parseFloat(tip.amount);
-            if (!isNaN(amount)) {
+            const price = prices[tip.token.toLowerCase()] || 0;
+            const usdValue = amount * price;
+
+            if (!isNaN(usdValue)) {
                 if (tipperStats[tip.sender]) {
-                    tipperStats[tip.sender] += amount;
+                    tipperStats[tip.sender] += usdValue;
                 } else {
-                    tipperStats[tip.sender] = amount;
+                    tipperStats[tip.sender] = usdValue;
                 }
             }
         });
 
         const sortedTippers = Object.entries(tipperStats)
-            .map(([sender, totalAmount]) => ({ sender, totalAmount, token: 'ETH' }))
+            .map(([sender, totalAmount]) => ({ sender, totalAmount }))
             .sort((a, b) => b.totalAmount - a.totalAmount);
 
         return sortedTippers.slice(0, limit);

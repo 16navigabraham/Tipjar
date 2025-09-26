@@ -31,7 +31,7 @@ async function Leaderboard() {
 
     return (
         <div className="space-y-4">
-            <h3 className="text-2xl font-semibold text-center">Global Champions (Top 10 ETH Tippers)</h3>
+            <h3 className="text-2xl font-semibold text-center">Global Champions (Top 10 Supporters)</h3>
             {userProfiles.length > 0 ? (
                 <ul className="space-y-3">
                 {userProfiles.map((tipper, index) => (
@@ -48,7 +48,7 @@ async function Leaderboard() {
                         />
                         <span className="font-medium text-lg">{tipper.username || shortenAddress(tipper.sender)}</span>
                     </div>
-                    <span className="font-semibold text-lg">{tipper.totalAmount.toFixed(4)} ETH</span>
+                    <span className="font-semibold text-lg">${tipper.totalAmount.toFixed(2)} USD</span>
                     </li>
                 ))}
                 </ul>
