@@ -62,6 +62,7 @@ function validateAddress(address: string): string {
     try {
         return ethers.getAddress(address);
     } catch (e) {
+        console.error(`Invalid address provided: ${address}`);
         throw new Error(`Invalid address format: ${address}`);
     }
 }
@@ -89,7 +90,7 @@ export function useTipContract() {
 
   const tipWithERC20Human = async (tokenAddress: string, recipientAddress: string, humanAmount: string, decimals: number): Promise<ethers.ContractTransactionResponse> => {
     if (!contract || !signer) throw new Error('Contract or signer not initialized');
-     if (tokenAddress === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' || !tokenAddress) {
+    if (tokenAddress === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' || !tokenAddress) {
       throw new Error("Cannot use tipWithERC20 for native currency. Use tipWithNative instead.");
     }
     
