@@ -59,10 +59,11 @@ export function useEthersAdapters() {
 
 // Helper function to safely validate and checksum addresses
 function validateAddress(address: string): string {
-    if (!ethers.isAddress(address)) {
+    try {
+        return ethers.getAddress(address);
+    } catch (e) {
         throw new Error(`Invalid address format: ${address}`);
     }
-    return ethers.getAddress(address);
 }
 
 // Main hook to be used in components
