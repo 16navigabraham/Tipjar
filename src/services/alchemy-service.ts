@@ -2,11 +2,11 @@
 
 const ALCHEMY_URL = process.env.NEXT_PUBLIC_ALCHEMY_BASE_URL;
 
-if (!ALCHEMY_URL) {
-  throw new Error('Alchemy URL is not configured. Please set NEXT_PUBLIC_ALCHEMY_BASE_URL.');
-}
-
 export async function getTokenBalance(walletAddress: `0x${string}`, tokenAddress: `0x${string}`): Promise<string> {
+  if (!ALCHEMY_URL) {
+    throw new Error('Alchemy URL is not configured. Please set NEXT_PUBLIC_ALCHEMY_BASE_URL.');
+  }
+
   try {
     const response = await fetch(ALCHEMY_URL, {
       method: 'POST',
