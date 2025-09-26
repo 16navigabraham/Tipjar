@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -95,6 +94,9 @@ export function useTipContract() {
 
   const tipWithERC20Human = async (tokenAddress: string, recipientAddress: string, humanAmount: string, decimals: number): Promise<ethers.ContractTransactionResponse> => {
     if (!contract || !signer) throw new Error('Contract or signer not initialized');
+     if (tokenAddress === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
+      throw new Error("Cannot use tipWithERC20 for native currency. Use tipWithNative instead.");
+    }
     
     const validTokenAddress = validateAddress(tokenAddress);
     const validRecipientAddress = validateAddress(recipientAddress);

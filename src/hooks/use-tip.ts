@@ -45,10 +45,10 @@ export function useTip(creatorAddress?: `0x${string}`) {
         description: 'Please check your wallet to approve and send.',
       });
 
-      if (token.symbol === 'ETH') {
+      if (token.symbol === 'ETH' || !token.address) {
         tx = await tipWithNative(creatorAddress, amount);
       } else {
-        if (!token.address || !token.decimals) {
+        if (!token.decimals) {
           throw new Error('Token details are not defined for ERC20 tip.');
         }
         tx = await tipWithERC20Human(token.address, creatorAddress, amount, token.decimals);
