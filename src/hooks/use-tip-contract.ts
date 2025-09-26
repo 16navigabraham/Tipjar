@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -58,17 +59,10 @@ export function useEthersAdapters() {
 
 // Helper function to safely validate and checksum addresses
 function validateAddress(address: string): string {
-    try {
-      return ethers.getAddress(address);
-    } catch (error) {
-        console.warn(`Invalid address checksum: ${address}, attempting to correct.`);
-        try {
-            // If that fails, try with lowercase (some addresses need this)
-            return ethers.getAddress(address.toLowerCase());
-        } catch (secondError) {
-            throw new Error(`Invalid address format: ${address}`);
-        }
+    if (!ethers.isAddress(address)) {
+        throw new Error(`Invalid address format: ${address}`);
     }
+    return ethers.getAddress(address);
 }
 
 // Main hook to be used in components
@@ -94,7 +88,7 @@ export function useTipContract() {
 
   const tipWithERC20Human = async (tokenAddress: string, recipientAddress: string, humanAmount: string, decimals: number): Promise<ethers.ContractTransactionResponse> => {
     if (!contract || !signer) throw new Error('Contract or signer not initialized');
-     if (tokenAddress === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
+     if (tokenAddress === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' || !tokenAddress) {
       throw new Error("Cannot use tipWithERC20 for native currency. Use tipWithNative instead.");
     }
     

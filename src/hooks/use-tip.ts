@@ -8,7 +8,6 @@ import { getTipsBySender, logTip } from '@/services/tip-service';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Token } from '@/lib/tokens';
 import { useTipContract } from './use-tip-contract';
-import { ethers } from 'ethers';
 
 export function useTip(creatorAddress?: `0x${string}`) {
   const { toast } = useToast();
@@ -48,7 +47,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
       if (token.symbol === 'ETH' || !token.address) {
         tx = await tipWithNative(creatorAddress, amount);
       } else {
-        if (!token.decimals) {
+        if (!token.decimals || !token.address) {
           throw new Error('Token details are not defined for ERC20 tip.');
         }
         tx = await tipWithERC20Human(token.address, creatorAddress, amount, token.decimals);
