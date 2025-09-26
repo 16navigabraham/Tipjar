@@ -11,14 +11,14 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/hooks/use-app';
 
 export default function Home() {
-  const { isConnected, loading, isNewUser } = useApp();
+  const { isConnected, loading, isNewUser, userProfile } = useApp();
   const router = useRouter();
 
   useEffect(() => {
-    if (isConnected && isNewUser) {
+    if (isConnected && !loading && isNewUser) {
       router.push('/profile');
     }
-  }, [isConnected, isNewUser, router]);
+  }, [isConnected, loading, isNewUser, router]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -37,7 +37,7 @@ export default function Home() {
                 <Loader2 className="h-8 w-8 animate-spin" />
                 <p className="font-semibold">Checking your profile...</p>
              </div>
-          ) : (
+          ) : userProfile ? (
             <div className="flex flex-col items-center space-y-4">
               <p className="font-semibold">You're connected!</p>
               <Button asChild size="lg">
@@ -47,6 +47,11 @@ export default function Home() {
                 </Link>
               </Button>
             </div>
+          ) : (
+            <div className="flex flex-col items-center space-y-4">
+                <Loader2 className="h-8 w-8 animate-spin" />
+                <p className="font-semibold">Redirecting to profile setup...</p>
+             </div>
           )
         ) : (
           <ConnectWalletButton />

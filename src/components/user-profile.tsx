@@ -10,7 +10,7 @@ import { CheckCircle } from 'lucide-react';
 import { useApp } from '@/hooks/use-app';
 
 export function UserProfile() {
-  const { isConnected, userProfile, loading } = useApp();
+  const { isConnected, userProfile, loading, isNewUser } = useApp();
 
   if (!isConnected) {
     return (
@@ -37,9 +37,15 @@ export function UserProfile() {
               <CardContent className="space-y-4">
                   <Skeleton className="h-10 w-full" />
                   <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-20 w-full" />
+                  <Skeleton className="h-10 w-full" />
               </CardContent>
           </Card>
       )
+  }
+
+  if (isNewUser) {
+    return <ProfileForm />;
   }
 
   if (userProfile) {
@@ -67,6 +73,6 @@ export function UserProfile() {
     );
   }
 
-
+  // Fallback for any unexpected state
   return <ProfileForm />;
 }
