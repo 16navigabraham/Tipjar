@@ -47,7 +47,7 @@ export function useTip(creatorAddress?: `0x${string}`) {
       if (token.symbol === 'ETH' || !token.address) {
         tx = await tipWithNative(creatorAddress, amount);
       } else {
-        if (!token.decimals || !token.address) {
+        if (!token.decimals) {
           throw new Error('Token details are not defined for ERC20 tip.');
         }
         tx = await tipWithERC20Human(token.address, creatorAddress, amount, token.decimals);
@@ -80,7 +80,6 @@ export function useTip(creatorAddress?: `0x${string}`) {
 
     } catch (e: any) {
       console.error("Tipping failed:", e);
-      // ethers errors often have a `reason` property
       const errorMessage = e.reason || (e.info?.error?.message) || e.message || 'The transaction was cancelled or failed.';
       toast({
         title: 'Transaction Error',

@@ -57,16 +57,6 @@ export function useEthersAdapters() {
   return { provider, signer };
 }
 
-// Helper function to safely validate and checksum addresses
-function validateAddress(address: string): string {
-    try {
-        return ethers.getAddress(address);
-    } catch (e) {
-        console.error(`Invalid address provided: ${address}`);
-        throw new Error(`Invalid address format: ${address}`);
-    }
-}
-
 // Main hook to be used in components
 export function useTipContract() {
   const { signer } = useEthersAdapters();
@@ -79,7 +69,7 @@ export function useTipContract() {
   const tipWithNative = async (recipientAddress: string, tipAmountEth: string): Promise<ethers.ContractTransactionResponse> => {
     if (!contract || !signer) throw new Error('Contract or signer not initialized');
     
-    const validRecipientAddress = validateAddress(recipientAddress);
+    const validRecipientAddress = ethers.getAddress(recipientAddress);
     const tipAmountWei = ethers.parseEther(tipAmountEth);
     
     const tx = await contract.tipWithNative(validRecipientAddress, {
@@ -94,8 +84,8 @@ export function useTipContract() {
       throw new Error("Cannot use tipWithERC20 for native currency. Use tipWithNative instead.");
     }
     
-    const validTokenAddress = validateAddress(tokenAddress);
-    const validRecipientAddress = validateAddress(recipientAddress);
+    const validTokenAddress = ethers.getAddress(tokenAddress);
+    const validRecipientAddress = ethers.getAddress(recipientAddress);
     
     const tokenContract = new ethers.Contract(validTokenAddress, erc20Abi, signer);
     const tipAmount = ethers.parseUnits(humanAmount, decimals);
