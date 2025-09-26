@@ -8,10 +8,11 @@ import { useRouter } from 'next/navigation';
 export const useApp = () => {
   const { address, isConnected } = useAccount();
   const [isNewUser, setIsNewUser] = useState(false);
+  const [initialCheckComplete, setInitialCheckComplete] = useState(false);
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const { data: userProfile, isLoading: loading } = useQuery({
+  const { data: userProfile, isLoading: loading, isFetched } = useQuery({
     queryKey: ['userProfile', address],
     queryFn: async () => {
         if (!address) return null;
@@ -26,6 +27,15 @@ export const useApp = () => {
     },
     enabled: isConnected && !!address,
   });
+
+  useEffect(() => {
+    if (isConnected && isFetched) {
+        setInitialCheckComplete(true);
+    }
+    if (!isConnected) {
+        setInitialCheckComplete(false);
+    }
+  }, [isConnected, isFetched]);
 
   const createProfile = async (profileData: Omit<UserProfile, 'walletAddress' | 'totalTipsReceived' | 'totalTipsSent' | 'isVerified' | 'createdAt'>) => {
     if (!address) throw new Error("Wallet not connected");
@@ -50,6 +60,7 @@ export const useApp = () => {
     userProfile,
     isNewUser,
     loading,
+    initialCheckComplete,
     createProfile,
   };
 };

@@ -5,20 +5,11 @@ import { Header } from '@/components/layout/header';
 import { ConnectWalletButton } from '@/components/connect-wallet-button';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Send, Loader2 } from 'lucide-react';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Send } from 'lucide-react';
 import { useApp } from '@/hooks/use-app';
 
 export default function Home() {
-  const { isConnected, loading, isNewUser, userProfile } = useApp();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (isConnected && !loading && isNewUser) {
-      router.push('/profile');
-    }
-  }, [isConnected, loading, isNewUser, router]);
+  const { isConnected, initialCheckComplete } = useApp();
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -31,28 +22,16 @@ export default function Home() {
           The simplest way to show your appreciation for creators on the Base network. Connect your wallet, pick a token, and send a tip in seconds.
         </p>
         
-        {isConnected ? (
-          loading ? (
-             <div className="flex flex-col items-center space-y-4">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <p className="font-semibold">Checking your profile...</p>
-             </div>
-          ) : userProfile ? (
-            <div className="flex flex-col items-center space-y-4">
-              <p className="font-semibold">You're connected!</p>
-              <Button asChild size="lg">
-                <Link href="/tip">
-                  <Send className="mr-2 h-4 w-4" />
-                  Send a Tip Now
-                </Link>
-              </Button>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center space-y-4">
-                <Loader2 className="h-8 w-8 animate-spin" />
-                <p className="font-semibold">Redirecting to profile setup...</p>
-             </div>
-          )
+        {isConnected && initialCheckComplete ? (
+          <div className="flex flex-col items-center space-y-4">
+            <p className="font-semibold">You're connected!</p>
+            <Button asChild size="lg">
+              <Link href="/tip">
+                <Send className="mr-2 h-4 w-4" />
+                Send a Tip Now
+              </Link>
+            </Button>
+          </div>
         ) : (
           <ConnectWalletButton />
         )}
