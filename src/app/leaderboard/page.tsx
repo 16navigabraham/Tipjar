@@ -31,7 +31,7 @@ async function Leaderboard() {
 
     return (
         <div className="space-y-4">
-            <h3 className="text-2xl font-semibold text-center">Global Leaderboard (Top 10 ETH Supporters)</h3>
+            <h3 className="text-2xl font-semibold text-center">Global Champions (Top 10 ETH Tippers)</h3>
             {userProfiles.length > 0 ? (
                 <ul className="space-y-3">
                 {userProfiles.map((tipper, index) => (
@@ -53,7 +53,7 @@ async function Leaderboard() {
                 ))}
                 </ul>
             ) : (
-                <p className="text-center text-muted-foreground text-lg">No tips have been sent yet. Be the first to appear on the leaderboard!</p>
+                <p className="text-center text-muted-foreground text-lg">The leaderboard is waiting for its first hero. Send a tip to claim your spot!</p>
             )}
         </div>
     );
@@ -67,8 +67,8 @@ export default function LeaderboardPage() {
       <main className="flex-1 flex items-start justify-center p-4 sm:p-6">
         <Card className="w-full max-w-4xl">
             <CardHeader>
-                <CardTitle>Top Supporters</CardTitle>
-                <CardDescription>The most generous tippers across the platform.</CardDescription>
+                <CardTitle>Hall of Fame</CardTitle>
+                <CardDescription>Celebrating the most generous supporters on TipJar.</CardDescription>
             </CardHeader>
             <CardContent>
                 <Leaderboard />
