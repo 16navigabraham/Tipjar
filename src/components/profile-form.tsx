@@ -67,7 +67,9 @@ export function ProfileForm() {
                 if (result.success && result.url) {
                     avatarUrl = result.url;
                 } else {
-                    throw new Error(result.error || "Failed to upload profile picture.");
+                    // This else block might not be reachable if uploadToPinata always returns a success
+                    // but we keep it for robustness.
+                    throw new Error("Failed to upload profile picture.");
                 }
             }
 
