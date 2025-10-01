@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,7 +21,7 @@ import { Send, Coins, Bot, Loader2 } from 'lucide-react';
 import { useAccount } from 'wagmi';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useState, useEffect } from 'react';
-import { tokens, Token } from '@/lib/tokens';
+import { Token, getTokensByChain } from '@/lib/tokens';
 import { useQuery } from '@tanstack/react-query';
 import { getTokenBalance } from '@/services/alchemy-service';
 import { formatUnits } from 'viem';
@@ -41,33 +42,42 @@ interface TipFormProps {
 }
 
 export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, chain } = useAccount();
   const { price: ethPrice } = useEthPrice();
   const [usdValue, setUsdValue] = useState<string>('');
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<SuggestTipTokensOutput | null>(null);
   
+  const chainTokens = chain ? getTokensByChain(chain.id) : [];
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       amount: '',
-      tokenSymbol: 'ETH',
+      tokenSymbol: chainTokens[0]?.symbol || '',
       message: '',
     },
   });
 
+  useEffect(() => {
+    if (chain) {
+        const defaultToken = getTokensByChain(chain.id)[0]?.symbol || '';
+        form.setValue('tokenSymbol', defaultToken);
+    }
+  }, [chain, form]);
+
   const amountValue = form.watch('amount');
   const selectedTokenSymbol = form.watch('tokenSymbol');
   const messageValue = form.watch('message');
-  const selectedToken = tokens.find(t => t.symbol === selectedTokenSymbol) || tokens[0];
+  const selectedToken = chainTokens.find(t => t.symbol === selectedTokenSymbol) || chainTokens[0];
 
   const { data: tokenBalance, isLoading: isLoadingBalance } = useQuery({
-    queryKey: ['tokenBalance', address, selectedToken.address],
+    queryKey: ['tokenBalance', address, selectedToken?.address],
     queryFn: () => getTokenBalance(address!, selectedToken.address!),
-    enabled: !!address && !!selectedToken.address,
+    enabled: !!address && !!selectedToken?.address,
   });
 
-  const formattedBalance = tokenBalance 
+  const formattedBalance = tokenBalance && selectedToken
     ? parseFloat(formatUnits(BigInt(tokenBalance), selectedToken.decimals)).toFixed(4)
     : '0';
   
@@ -86,7 +96,7 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
   };
 
   useEffect(() => {
-    if (selectedToken.symbol === 'ETH' && ethPrice && amountValue) {
+    if (selectedToken?.symbol === 'ETH' && ethPrice && amountValue) {
       const numericAmount = parseFloat(amountValue);
       if (!isNaN(numericAmount)) {
         setUsdValue((numericAmount * ethPrice).toFixed(2));
@@ -99,7 +109,7 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
   }, [amountValue, ethPrice, selectedToken]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const token = tokens.find(t => t.symbol === values.tokenSymbol);
+    const token = chainTokens.find(t => t.symbol === values.tokenSymbol);
     if (!token) return;
     await onSendTip(values.amount, token, values.message);
     form.reset();
@@ -120,7 +130,7 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
                 <FormControl>
                   <div className="relative">
                     <Input placeholder="0.01" type="number" step="any" {...field} className="pr-20" />
-                    {selectedToken.symbol === 'ETH' && usdValue && (
+                    {selectedToken?.symbol === 'ETH' && usdValue && (
                       <span className="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">
                         ~${usdValue} USD
                       </span>
@@ -137,14 +147,14 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
             render={({ field }) => (
               <FormItem className="sm:w-1/3">
                 <FormLabel>Token</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a token" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {tokens.map((token) => (
+                    {chainTokens.map((token) => (
                       <SelectItem key={token.symbol} value={token.symbol}>
                         <div className="flex items-center gap-2">
                            <Coins className="w-4 h-4" /> 
@@ -159,7 +169,7 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
             )}
           />
         </div>
-        {selectedToken.address && isConnected && (
+        {selectedToken?.address && isConnected && (
             <FormDescription>
                 Your balance: {isLoadingBalance ? 'Loading...' : `${formattedBalance} ${selectedToken.symbol}`}
             </FormDescription>
@@ -191,7 +201,7 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
             <h4 className="font-semibold text-sm mb-2">AI Suggestions:</h4>
             <div className="flex flex-wrap gap-2">
               {aiSuggestions.suggestedTokens.map((token) => {
-                const tokenExists = tokens.some(t => t.symbol.toLowerCase() === token.toLowerCase());
+                const tokenExists = chainTokens.some(t => t.symbol.toLowerCase() === token.toLowerCase());
                 return (
                   <Button
                     key={token}
@@ -207,7 +217,7 @@ export function TipForm({ onSendTip, isSending, isConfirming }: TipFormProps) {
                 )
               })}
             </div>
-            {!aiSuggestions.suggestedTokens.some(t => tokens.some(ts => ts.symbol.toLowerCase() === t.toLowerCase())) && (
+            {!aiSuggestions.suggestedTokens.some(t => chainTokens.some(ts => ts.symbol.toLowerCase() === t.toLowerCase())) && (
                 <p className="text-xs text-muted-foreground mt-2">None of the suggested tokens are supported for tipping yet.</p>
             )}
           </div>

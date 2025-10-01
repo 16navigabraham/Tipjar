@@ -1,14 +1,16 @@
-import { base } from 'wagmi/chains';
+
+import { base, celo } from 'wagmi/chains';
 
 export interface Token {
     symbol: string;
     name: string;
     address?: `0x${string}`;
     decimals: number;
-    chain: typeof base;
+    chain: { id: number; name: string };
 }
 
 export const tokens: Token[] = [
+    // Base Tokens
     {
         symbol: 'ETH',
         name: 'Ether',
@@ -36,4 +38,22 @@ export const tokens: Token[] = [
         decimals: 18,
         chain: base,
     },
+    // Celo Tokens
+    {
+        symbol: 'CELO',
+        name: 'Celo',
+        decimals: 18,
+        chain: celo,
+    },
+    {
+        symbol: 'cUSD',
+        name: 'Celo Dollar',
+        address: '0x765DE816845861e75A25fCA122bb6898B8B1282a',
+        decimals: 18,
+        chain: celo,
+    },
 ];
+
+export const getTokensByChain = (chainId: number): Token[] => {
+    return tokens.filter(t => t.chain.id === chainId);
+}

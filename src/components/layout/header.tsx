@@ -1,8 +1,10 @@
+
 import { ConnectWalletButton } from '@/components/connect-wallet-button';
 import { ThemeToggle } from '../theme-toggle';
 import Link from 'next/link';
 import { Button } from '../ui/button';
 import { Coins, Trophy } from 'lucide-react';
+import { NetworkSwitcher } from '../network-switcher';
 
 export function Header() {
   return (
@@ -27,6 +29,7 @@ export function Header() {
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end gap-2">
+          <NetworkSwitcher />
           <ConnectWalletButton />
           <ThemeToggle />
         </div>

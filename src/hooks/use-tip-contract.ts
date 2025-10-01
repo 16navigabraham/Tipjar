@@ -3,11 +3,11 @@
 
 import { useMemo } from 'react';
 import { type BrowserProvider, type JsonRpcSigner, ethers } from 'ethers';
-import { usePublicClient, useConnectorClient } from 'wagmi';
+import { usePublicClient, useConnectorClient, useAccount } from 'wagmi';
 import { type PublicClient, type WalletClient, type HttpTransport } from 'viem';
 import { tipJarAbi } from '@/lib/abi/TipJar';
 import { erc20Abi } from '@/lib/abi/erc20';
-import { contractAddress as TIP_CONTRACT_ADDRESS } from '@/lib/config';
+import { contractAddresses } from '@/lib/config';
 
 // Hook to get a viem PublicClient and WalletClient and convert them to ethers.js Provider and Signer
 function publicClientToProvider(publicClient: PublicClient) {
@@ -60,11 +60,13 @@ export function useEthersAdapters() {
 // Main hook to be used in components
 export function useTipContract() {
   const { signer } = useEthersAdapters();
+  const { chain } = useAccount();
 
   const contract = useMemo(() => {
-    if (!signer) return undefined;
-    return new ethers.Contract(TIP_CONTRACT_ADDRESS, tipJarAbi, signer);
-  }, [signer]);
+    if (!signer || !chain || !contractAddresses[chain.id]) return undefined;
+    const contractAddress = contractAddresses[chain.id];
+    return new ethers.Contract(contractAddress, tipJarAbi, signer);
+  }, [signer, chain]);
 
   const tipWithNative = async (recipientAddress: string, tipAmountEth: string): Promise<ethers.ContractTransactionResponse> => {
     if (!contract || !signer) throw new Error('Contract or signer not initialized');
@@ -79,23 +81,28 @@ export function useTipContract() {
   };
 
   const tipWithERC20Human = async (tokenAddress: string, recipientAddress: string, humanAmount: string, decimals: number): Promise<ethers.ContractTransactionResponse> => {
-    if (!contract || !signer) throw new Error('Contract or signer not initialized');
+    if (!contract || !signer || !chain || !contractAddresses[chain.id]) {
+      throw new Error('Contract or signer not initialized for the current chain.');
+    }
     if (tokenAddress === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' || !tokenAddress) {
       throw new Error("Cannot use tipWithERC20 for native currency. Use tipWithNative instead.");
     }
     
     const validTokenAddress = ethers.getAddress(tokenAddress);
     const validRecipientAddress = ethers.getAddress(recipientAddress);
+    const contractAddress = contractAddresses[chain.id];
     
     const tokenContract = new ethers.Contract(validTokenAddress, erc20Abi, signer);
     const tipAmount = ethers.parseUnits(humanAmount, decimals);
 
     const signerAddress = await signer.getAddress();
-    const currentAllowance = await tokenContract.allowance(signerAddress, TIP_CONTRACT_ADDRESS);
+    const currentAllowance = await tokenContract.allowance(signerAddress, contractAddress);
 
     if (currentAllowance < tipAmount) {
-        const approveTx = await tokenContract.approve(TIP_CONTRACT_ADDRESS, tipAmount);
+        console.log('Approving tokens...');
+        const approveTx = await tokenContract.approve(contractAddress, tipAmount);
         await approveTx.wait(); // Wait for approval to be confirmed
+        console.log('Approval confirmed');
     }
 
     const tx = await contract.tipWithERC20(validTokenAddress, validRecipientAddress, tipAmount);
