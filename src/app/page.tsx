@@ -9,7 +9,7 @@ import { Send } from 'lucide-react';
 import { useApp } from '@/hooks/use-app';
 
 export default function Home() {
-  const { isConnected, initialCheckComplete } = useApp();
+  const { isConnected } = useApp();
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -22,7 +22,7 @@ export default function Home() {
           The simplest way to show your appreciation for creators on the Base network. Connect your wallet, pick a token, and send a tip in seconds.
         </p>
         
-        {isConnected && initialCheckComplete ? (
+        {isConnected ? (
           <div className="flex flex-col items-center space-y-4">
             <p className="font-semibold">You're connected!</p>
             <Button asChild size="lg">
