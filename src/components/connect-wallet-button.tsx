@@ -1,6 +1,7 @@
 'use client';
 
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
+import { useAppKit } from '@reown/appkit/react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,11 +12,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { shortenAddress } from '@/lib/utils';
 import { Wallet, User } from 'lucide-react';
-import { useWeb3Modal } from '@web3modal/wagmi/react';
 import Link from 'next/link';
 
 export function ConnectWalletButton() {
-  const { open } = useWeb3Modal();
+  const { open } = useAppKit();
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
 

@@ -1,6 +1,6 @@
 
-import { defaultWagmiConfig } from '@web3modal/wagmi/react';
-import { mainnet, polygon, arbitrum, base, celo } from 'wagmi/chains';
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
+import { mainnet, polygon, arbitrum, base, celo, type Chain } from 'wagmi/chains';
 
 // 0. Your WalletConnect Cloud project ID
 export const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'undefined';
@@ -18,7 +18,7 @@ export const contractAddresses: Record<number, `0x${string}`> = {
   [celo.id]: '0xf095C5919655879CaE18957d74a3F726E22aEd5d',
 };
 
-// 3. Create wagmiConfig
+// 3. Create wagmiConfig using Reown AppKit
 const metadata = {
   name: 'TipJar',
   description: 'A simple dApp to send tips to creators.',
@@ -26,10 +26,12 @@ const metadata = {
   icons: ['https://avatars.githubusercontent.com/u/37784886'],
 };
 
-const chains = [mainnet, polygon, arbitrum, base, celo] as const;
-export const wagmiConfig = defaultWagmiConfig({
-  chains,
-  projectId,
-  metadata,
+const chains: Chain[] = [mainnet, polygon, arbitrum, base, celo];
+
+export const wagmiAdapter = new WagmiAdapter({
   ssr: true,
+  networks: chains,
+  projectId,
 });
+
+export const wagmiConfig = wagmiAdapter.wagmiConfig;

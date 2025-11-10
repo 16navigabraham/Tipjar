@@ -1,12 +1,13 @@
 'use client';
 
-import { createWeb3Modal } from '@web3modal/wagmi/react';
+import { createAppKit } from '@reown/appkit/react';
 import { type ReactNode, useEffect, useState } from 'react';
 import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { wagmiConfig, projectId } from '@/lib/config';
+import { wagmiAdapter, projectId } from '@/lib/config';
 import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes';
 import { AppProvider } from '@/hooks/use-app-provider';
+import { mainnet, polygon, arbitrum, base, celo } from 'wagmi/chains';
 
 const queryClient = new QueryClient();
 
@@ -15,21 +16,35 @@ if (!projectId) {
     throw new Error('WalletConnect Project ID is not defined. Please check your environment variables.');
 }
 
-createWeb3Modal({
-  wagmiConfig,
+// 1. Set up the metadata
+const metadata = {
+  name: 'TipJar',
+  description: 'A simple dApp to send tips to creators.',
+  url: 'https://tipjar.app', // origin must match your domain & subdomain
+  icons: ['https://avatars.githubusercontent.com/u/37784886'],
+};
+
+// 2. Create the modal
+createAppKit({
+  adapters: [wagmiAdapter],
   projectId,
+  networks: [mainnet, polygon, arbitrum, base, celo],
+  metadata,
+  features: {
+    analytics: true, // Optional - defaults to your Cloud configuration
+  },
 });
 
-function Web3ModalProvider({ children }: { children: ReactNode }) {
+function AppKitProvider({ children }: { children: ReactNode }) {
   const { theme } = useTheme();
 
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WagmiProvider config={wagmiAdapter.wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <AppProvider>
             {children}
         </AppProvider>
-        {/* Hack to update web3modal theme */}
+        {/* AppKit theme styling */}
         <div
           style={{
             ['--w3m-theme-mode' as string]: theme,
@@ -54,7 +69,7 @@ function ClientSideProviders({ children }: { children: ReactNode }) {
     return null;
   }
 
-  return <Web3ModalProvider>{children}</Web3ModalProvider>;
+  return <AppKitProvider>{children}</AppKitProvider>;
 }
 
 export function Providers({ children }: { children: ReactNode }) {
