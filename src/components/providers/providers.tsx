@@ -31,7 +31,17 @@ createAppKit({
   networks: [mainnet, polygon, arbitrum, base, celo],
   metadata,
   features: {
-    analytics: true, // Optional - defaults to your Cloud configuration
+    analytics: true, // Enable analytics
+    email: false, // Disable email login for Web3-only experience
+    socials: [], // Remove social logins for Web3-only experience
+    emailShowWallets: false, // Web3-only
+    onramp: true, // Enable on-ramp for buying crypto
+    swaps: true, // Enable token swaps
+  },
+  themeMode: 'light', // Will be overridden by CSS variables
+  themeVariables: {
+    '--w3m-font-family': 'inherit',
+    '--w3m-border-radius-master': '8px',
   },
 });
 

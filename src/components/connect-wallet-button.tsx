@@ -1,7 +1,6 @@
 'use client';
 
-import { useAccount, useDisconnect } from 'wagmi';
-import { useAppKit } from '@reown/appkit/react';
+import { useAppKit, useAppKitAccount } from '@reown/appkit/react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -11,13 +10,12 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { shortenAddress } from '@/lib/utils';
-import { Wallet, User } from 'lucide-react';
+import { Wallet, User, Settings } from 'lucide-react';
 import Link from 'next/link';
 
 export function ConnectWalletButton() {
   const { open } = useAppKit();
-  const { address, isConnected } = useAccount();
-  const { disconnect } = useDisconnect();
+  const { address, isConnected } = useAppKitAccount();
 
   if (isConnected) {
     return (
@@ -33,8 +31,9 @@ export function ConnectWalletButton() {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => disconnect()}>
-            Disconnect
+          <DropdownMenuItem onClick={() => open({ view: 'Account' })}>
+            <Settings className="mr-2 h-4 w-4" />
+            Manage Wallet
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

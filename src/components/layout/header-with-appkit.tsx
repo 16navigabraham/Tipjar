@@ -1,9 +1,9 @@
-
-import { SimpleAppKitButton } from '@/components/simple-wallet';
+import { AppKitWalletButton } from '@/components/appkit-wallet-button';
 import { ThemeToggle } from '../theme-toggle';
 import Link from 'next/link';
+import { NetworkSwitcher } from '../network-switcher';
 
-export function Header() {
+export function HeaderWithAppKit() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
@@ -26,8 +26,8 @@ export function Header() {
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-end gap-2">
-          {/* AppKit handles wallet connection AND network switching! */}
-          <SimpleAppKitButton />
+          <NetworkSwitcher />
+          <AppKitWalletButton />
           <ThemeToggle />
         </div>
       </div>
