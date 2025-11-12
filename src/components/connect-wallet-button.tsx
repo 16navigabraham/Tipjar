@@ -33,7 +33,7 @@ export function ConnectWalletButton() {
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => open({ view: 'Account' })}>
             <Settings className="mr-2 h-4 w-4" />
-            Manage Wallet
+            Manage your Wallet
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

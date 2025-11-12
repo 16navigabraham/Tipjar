@@ -21,7 +21,7 @@ export function Header() {
                 Tip
              </Link>
              <Link href="/profile" className="text-muted-foreground transition-colors hover:text-foreground">
-                Profile
+                Your Profile
              </Link>
           </nav>
         </div>
